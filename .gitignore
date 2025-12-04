@@ -97,3 +97,4 @@ temp/
 uploads/
 storage/
 public/uploads/
+*.md

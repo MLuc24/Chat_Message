@@ -1,14 +1,27 @@
 // LoginPage - Public authentication page
 
-import { LoginForm } from '@/components/features/auth/LoginForm';
-import { Card } from '@/components/common/Card';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { LoginForm } from '../components/features/auth/LoginForm';
+import { AuthLayout } from '../components/layout/AuthLayout';
+import { useAuth } from '../hooks/useAuth';
 
 export function LoginPage() {
+    const navigate = useNavigate();
+    const { isAuthenticated } = useAuth();
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/chat');
+        }
+    }, [isAuthenticated, navigate]);
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
-            <Card className="w-full max-w-md">
-                <LoginForm />
-            </Card>
-        </div>
+        <AuthLayout
+            title="Welcome Back"
+            subtitle="Sign in to continue chatting"
+        >
+            <LoginForm />
+        </AuthLayout>
     );
 }

@@ -1,10 +1,12 @@
 // Routes configuration
 
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { ChatPage } from '@/pages/ChatPage';
+import { ProfilePage } from '@/pages/ProfilePage';
+import { NotFoundPage } from '@/pages/NotFoundPage';
 import { ROUTES } from '@/utils/constants';
 
 export function AppRoutes() {
@@ -17,10 +19,14 @@ export function AppRoutes() {
             {/* Protected routes */}
             <Route element={<ProtectedRoute />}>
                 <Route path={ROUTES.CHAT} element={<ChatPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
             </Route>
 
-            {/* Redirect unknown routes to chat */}
-            <Route path="*" element={<Navigate to={ROUTES.CHAT} replace />} />
+            {/* 404 - Not Found */}
+            <Route path="/404" element={<NotFoundPage />} />
+
+            {/* Redirect unknown routes to 404 */}
+            <Route path="*" element={<NotFoundPage />} />
         </Routes>
     );
 }

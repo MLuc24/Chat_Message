@@ -15,7 +15,7 @@ export class ProxyController {
     target: process.env.AUTH_SERVICE_URL,
     changeOrigin: true,
     pathRewrite: {
-      '^/api/auth': '',
+      '^/api': '',
     },
     timeout: 30000,
     proxyTimeout: 30000,
@@ -32,7 +32,7 @@ export class ProxyController {
     target: process.env.USER_SERVICE_URL,
     changeOrigin: true,
     pathRewrite: {
-      '^/api/users': '',
+      '^/api': '',
     },
     timeout: 30000,
     proxyTimeout: 30000,
@@ -49,7 +49,7 @@ export class ProxyController {
     target: process.env.CHAT_SERVICE_URL,
     changeOrigin: true,
     pathRewrite: {
-      '^/api/chat': '',
+      '^/api': '',
     },
     timeout: 30000,
     proxyTimeout: 30000,

@@ -47,7 +47,7 @@ http.interceptors.response.use(
                     { refreshToken }
                 );
 
-                const newToken = response.data.accessToken;
+                const newToken = response.data.tokens?.accessToken || response.data.accessToken;
                 localStorage.setItem('auth_token', newToken);
 
                 // Retry original request with new token

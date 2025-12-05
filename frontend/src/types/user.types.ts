@@ -23,6 +23,8 @@ export interface RegisterData {
 
 export interface AuthResponse {
     user: User;
-    accessToken: string;
-    refreshToken: string;
+    tokens: {
+        accessToken: string;
+        refreshToken: string;
+    };
 }

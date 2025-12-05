@@ -3,7 +3,7 @@
 export const ROUTES = {
     LOGIN: '/login',
     REGISTER: '/register',
-    CHAT: '/',
+    CHAT: '/chat',
     PROFILE: '/profile',
 } as const;
 

@@ -29,4 +29,4 @@ RUN npm ci --only=production
 
 EXPOSE 3003
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main"]

@@ -1,6 +1,6 @@
 // Routes configuration
 
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
@@ -12,6 +12,9 @@ import { ROUTES } from '@/utils/constants';
 export function AppRoutes() {
     return (
         <Routes>
+            {/* Redirect root to chat */}
+            <Route path="/" element={<Navigate to={ROUTES.CHAT} replace />} />
+
             {/* Public routes */}
             <Route path={ROUTES.LOGIN} element={<LoginPage />} />
             <Route path={ROUTES.REGISTER} element={<RegisterPage />} />

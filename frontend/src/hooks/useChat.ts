@@ -21,14 +21,16 @@ export function useChat(conversationId?: string) {
     // Initialize WebSocket listeners on mount
     useEffect(() => {
         initWebSocketListeners();
-    }, [initWebSocketListeners]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Set active conversation if provided
     useEffect(() => {
         if (conversationId) {
             setActiveConversation(conversationId);
         }
-    }, [conversationId, setActiveConversation]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [conversationId]);
 
     const currentMessages = activeConversationId
         ? messages[activeConversationId] || []

@@ -41,18 +41,18 @@ export const useAuthStore = create<AuthState>()(
                         const response = await authService.login(credentials);
 
                         // Save to localStorage
-                        localStorage.setItem('auth_token', response.accessToken);
-                        localStorage.setItem('refresh_token', response.refreshToken);
+                        localStorage.setItem('auth_token', response.tokens.accessToken);
+                        localStorage.setItem('refresh_token', response.tokens.refreshToken);
 
                         set({
                             user: response.user,
-                            token: response.accessToken,
-                            refreshToken: response.refreshToken,
+                            token: response.tokens.accessToken,
+                            refreshToken: response.tokens.refreshToken,
                             isLoading: false,
                         });
 
                         // Connect WebSocket
-                        socketManager.connect(response.accessToken);
+                        socketManager.connect(response.tokens.accessToken);
                     } catch (error: any) {
                         const errorMessage = error.response?.data?.message || 'Login failed';
                         set({ error: errorMessage, isLoading: false });
@@ -67,18 +67,18 @@ export const useAuthStore = create<AuthState>()(
                         const response = await authService.register(data);
 
                         // Save to localStorage
-                        localStorage.setItem('auth_token', response.accessToken);
-                        localStorage.setItem('refresh_token', response.refreshToken);
+                        localStorage.setItem('auth_token', response.tokens.accessToken);
+                        localStorage.setItem('refresh_token', response.tokens.refreshToken);
 
                         set({
                             user: response.user,
-                            token: response.accessToken,
-                            refreshToken: response.refreshToken,
+                            token: response.tokens.accessToken,
+                            refreshToken: response.tokens.refreshToken,
                             isLoading: false,
                         });
 
                         // Connect WebSocket
-                        socketManager.connect(response.accessToken);
+                        socketManager.connect(response.tokens.accessToken);
                     } catch (error: any) {
                         const errorMessage = error.response?.data?.message || 'Registration failed';
                         set({ error: errorMessage, isLoading: false });

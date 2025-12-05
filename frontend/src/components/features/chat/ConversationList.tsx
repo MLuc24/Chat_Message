@@ -18,9 +18,11 @@ export function ConversationList({
     const { conversations, fetchConversations, isLoading } = useChat();
     const [searchQuery, setSearchQuery] = useState('');
 
+    // Fetch conversations once on mount
     useEffect(() => {
         fetchConversations();
-    }, [fetchConversations]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Ensure conversations is always an array
     const conversationList = Array.isArray(conversations) ? conversations : [];

@@ -50,12 +50,15 @@ export const MessageList = memo(function MessageList({
     const { user } = useAuth();
     const bottomRef = useRef<HTMLDivElement>(null);
 
+    // Ensure messages is always an array to prevent "map is not a function" errors
+    const messageList = Array.isArray(messages) ? messages : [];
+
     // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, isTyping]);
+    }, [messageList, isTyping]);
 
-    if (messages.length === 0) {
+    if (messageList.length === 0) {
         return (
             <div className="flex-1 flex items-center justify-center">
                 <EmptyState
@@ -83,9 +86,9 @@ export const MessageList = memo(function MessageList({
 
     return (
         <div className="flex-1 overflow-y-auto px-4 py-4 bg-gray-50">
-            {messages.map((message, index) => {
+            {messageList.map((message, index) => {
                 const isOwn = message.senderId === user?.id;
-                const showDateSeparator = shouldShowDateSeparator(message, messages[index - 1]);
+                const showDateSeparator = shouldShowDateSeparator(message, messageList[index - 1]);
 
                 return (
                     <div key={message.id}>

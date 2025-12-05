@@ -32,8 +32,10 @@ export function useChat(conversationId?: string) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [conversationId]);
 
-    const currentMessages = activeConversationId
-        ? messages[activeConversationId] || []
+    // Use conversationId param if provided, otherwise fall back to activeConversationId
+    const messageKey = conversationId || activeConversationId;
+    const currentMessages = messageKey
+        ? messages[messageKey] || []
         : [];
 
     return {

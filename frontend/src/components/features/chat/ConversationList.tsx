@@ -26,8 +26,6 @@ export function ConversationList({
 
     // Ensure conversations is always an array
     const conversationList = Array.isArray(conversations) ? conversations : [];
-    console.log('🔍 [ConversationList] conversations from useChat:', conversations);
-    console.log('🔍 [ConversationList] conversationList:', conversationList);
 
     // Filter conversations based on search
     const filteredConversations = conversationList.filter((conv) => {
@@ -37,7 +35,6 @@ export function ConversationList({
         const query = searchQuery.toLowerCase();
         return conversationName.includes(query) || lastMessage.includes(query);
     });
-    console.log('🔍 [ConversationList] filteredConversations:', filteredConversations);
 
     if (isLoading && conversationList.length === 0) {
         return (

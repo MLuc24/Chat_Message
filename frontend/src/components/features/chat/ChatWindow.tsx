@@ -76,7 +76,7 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
 
             {/* Messages */}
             <MessageList
-                messages={currentMessages}
+                messages={Array.isArray(currentMessages) ? currentMessages : []}
                 otherUser={recipient}
                 isTyping={false}
             />

@@ -82,9 +82,19 @@ export const useChatStore = create<ChatState>()(
 
         // Set active conversation
         setActiveConversation: (conversationId) => {
+            const previousConversationId = get().activeConversationId;
+
+            // Leave previous conversation
+            if (previousConversationId) {
+                socketManager.emit(WS_EVENTS.LEAVE_CONVERSATION, { conversationId: previousConversationId });
+            }
+
             set({ activeConversationId: conversationId });
 
             if (conversationId) {
+                // Join new conversation
+                socketManager.emit(WS_EVENTS.JOIN_CONVERSATION, { conversationId });
+
                 // Fetch messages if not already loaded
                 const { messages } = get();
                 if (!messages[conversationId]) {

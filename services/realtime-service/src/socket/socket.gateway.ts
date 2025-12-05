@@ -28,7 +28,12 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private authenticatedSockets = new Map<string, AuthenticatedSocket>();
 
-  constructor(private readonly redis: RedisService) {}
+  constructor(private readonly redis: RedisService) {
+    // Register message handler for Redis pub/sub
+    this.redis.setMessageHandler((conversationId, message) => {
+      this.broadcastMessage(conversationId, message);
+    });
+  }
 
   async handleConnection(client: AuthenticatedSocket) {
     console.log(`Client connecting: ${client.id}`);

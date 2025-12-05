@@ -11,8 +11,8 @@ import { API_ENDPOINTS } from '@/utils/constants';
 
 class ChatService {
     async getConversations(): Promise<Conversation[]> {
-        const { data } = await http.get<Conversation[]>(API_ENDPOINTS.CHAT.CONVERSATIONS);
-        return data;
+        const { data } = await http.get<{ conversations: Conversation[] }>(API_ENDPOINTS.CHAT.CONVERSATIONS);
+        return data.conversations;
     }
 
     async getConversation(conversationId: string): Promise<Conversation> {

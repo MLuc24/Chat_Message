@@ -220,6 +220,15 @@ messenger-microservice/
    curl http://localhost:9000/health
    ```
 
+5. **Seed the database with sample data**
+   ```bash
+   # Windows
+   scripts\seed-all.bat
+   
+   # Linux/macOS
+   ./scripts/seed-all.sh
+   ```
+
 ### Access the Application
 
 - **Frontend**: http://localhost:5173
@@ -227,6 +236,24 @@ messenger-microservice/
 - **WebSocket**: ws://localhost:9000
 - **PostgreSQL**: localhost:5432
 - **Redis**: localhost:6379
+
+### Test Accounts
+
+After seeding the database, you can login with these accounts:
+
+| Email | Password | Name |
+|-------|----------|------|
+| alice@example.com | password123 | Alice Johnson |
+| bob@example.com | password123 | Bob Smith |
+| charlie@example.com | password123 | Charlie Brown |
+| diana@example.com | password123 | Diana Prince |
+| edward@example.com | password123 | Edward Norton |
+
+**Sample Data Included:**
+- ✅ 5 test users with profiles
+- ✅ 2 direct conversations (Alice ↔ Bob, Alice ↔ Charlie)
+- ✅ 1 group conversation (Alice, Bob, Charlie, Diana)
+- ✅ 11 messages with delivery statuses
 
 ---
 
@@ -355,6 +382,10 @@ scripts/logs.bat
 
 # Test API endpoints
 scripts/test-api.bat
+
+# Seed all databases with sample data
+scripts/seed-all.bat  # Windows
+./scripts/seed-all.sh # Linux/macOS
 ```
 
 ---

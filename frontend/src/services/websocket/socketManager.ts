@@ -16,7 +16,6 @@ class SocketManager {
         }
 
         this.socket = io(config.wsUrl, {
-            auth: { token },
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionAttempts: 5,
@@ -24,6 +23,17 @@ class SocketManager {
 
         this.socket.on('connect', () => {
             console.log('[WebSocket] Connected');
+            // Authenticate after connection
+            this.socket?.emit('authenticate', { token });
+        });
+
+        this.socket.on('authenticated', (data) => {
+            console.log('[WebSocket] Authenticated:', data);
+        });
+
+        this.socket.on('unauthorized', (data) => {
+            console.error('[WebSocket] Authentication failed:', data);
+            this.disconnect();
         });
 
         this.socket.on('disconnect', (reason) => {

@@ -75,7 +75,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const decoded = jwt.verify(token, jwtSecret) as any;
 
       // Attach user info to socket
-      client.userId = decoded.userId;
+      client.userId = decoded.sub; // JWT uses 'sub' for user ID
       client.userEmail = decoded.email;
 
       // Store in authenticated sockets

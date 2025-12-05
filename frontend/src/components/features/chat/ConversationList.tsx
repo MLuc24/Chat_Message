@@ -26,15 +26,18 @@ export function ConversationList({
 
     // Ensure conversations is always an array
     const conversationList = Array.isArray(conversations) ? conversations : [];
+    console.log('🔍 [ConversationList] conversations from useChat:', conversations);
+    console.log('🔍 [ConversationList] conversationList:', conversationList);
 
     // Filter conversations based on search
     const filteredConversations = conversationList.filter((conv) => {
-        const otherUser = conv.participants[0];
-        const userName = otherUser?.name?.toLowerCase() || '';
-        const lastMessage = conv.lastMessage?.content.toLowerCase() || '';
+        // For group conversations, use name; for direct, we'll need populated participants later
+        const conversationName = (conv.name || conv.type || '').toLowerCase();
+        const lastMessage = (conv.lastMessage?.content || '').toLowerCase();
         const query = searchQuery.toLowerCase();
-        return userName.includes(query) || lastMessage.includes(query);
+        return conversationName.includes(query) || lastMessage.includes(query);
     });
+    console.log('🔍 [ConversationList] filteredConversations:', filteredConversations);
 
     if (isLoading && conversationList.length === 0) {
         return (

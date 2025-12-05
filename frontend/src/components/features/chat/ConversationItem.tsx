@@ -41,7 +41,16 @@ export const ConversationItem = memo(function ConversationItem({
 }: ConversationItemProps) {
     const unreadCount = conversation.unreadCount || 0;
     const lastMessage = conversation.lastMessage;
-    const otherParticipant = conversation.participants?.[0]; // Assuming 1-on-1 chat
+
+    // Display name: group name or "Direct Chat" for direct conversations
+    const displayName = conversation.type === 'group'
+        ? (conversation.name || 'Group Chat')
+        : (conversation.participants?.[0]?.name || 'Direct Chat');
+
+    // Avatar: use group avatar or first participant's avatar
+    const avatarUrl = conversation.type === 'group'
+        ? conversation.avatarUrl
+        : conversation.participants?.[0]?.avatar;
 
     return (
         <div
@@ -56,18 +65,17 @@ export const ConversationItem = memo(function ConversationItem({
         >
             {/* Avatar */}
             <Avatar
-                src={otherParticipant?.avatar}
-                alt={otherParticipant?.name || 'User'}
-                name={otherParticipant?.name}
+                src={avatarUrl}
+                alt={displayName}
+                name={displayName}
                 size="md"
-                status={otherParticipant?.isOnline ? 'online' : 'offline'}
             />
 
             {/* Content */}
             <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
                     <h3 className="font-semibold text-gray-900 truncate">
-                        {otherParticipant?.name || 'Unknown User'}
+                        {displayName}
                     </h3>
                     {lastMessage && (
                         <span className="text-xs text-gray-500 ml-2 flex-shrink-0">

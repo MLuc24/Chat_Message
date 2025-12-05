@@ -3,8 +3,9 @@ import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
 
 export interface JwtPayload {
-  userId: string;
+  sub: string; // JWT standard: subject (user ID)
   email: string;
+  name: string;
   iat?: number;
   exp?: number;
 }
@@ -43,8 +44,8 @@ export class AuthMiddleware implements NestMiddleware {
       // Attach user to request
       req.user = decoded;
 
-      // Forward user info to downstream services
-      req.headers['x-user-id'] = decoded.userId;
+      // Forward user info to downstream services (using 'sub' from JWT standard)
+      req.headers['x-user-id'] = decoded.sub;
       req.headers['x-user-email'] = decoded.email;
 
       next();

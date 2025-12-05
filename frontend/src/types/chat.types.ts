@@ -12,11 +12,21 @@ export interface Message {
     updatedAt: string;
 }
 
+export interface ConversationMember {
+    userId: string;
+    role: 'admin' | 'member';
+}
+
 export interface Conversation {
     id: string;
-    participants: User[];
+    type: 'direct' | 'group';
+    name?: string; // for group conversations
+    avatarUrl?: string; // for group conversations
+    members: ConversationMember[];
+    participants?: User[]; // populated members data (optional)
     lastMessage?: Message;
     unreadCount?: number;
+    createdBy: string;
     createdAt: string;
     updatedAt: string;
 }

@@ -39,10 +39,15 @@ export const useChatStore = create<ChatState>()(
             set({ isLoading: true, error: null });
             try {
                 const conversations = await chatService.getConversations();
+                console.log('📡 [chatStore] API response - conversations:', conversations);
+
                 // Ensure conversations is always an array
-                set({ conversations: Array.isArray(conversations) ? conversations : [], isLoading: false });
+                const conversationsArray = Array.isArray(conversations) ? conversations : [];
+                console.log('📡 [chatStore] Setting conversations to store:', conversationsArray);
+                set({ conversations: conversationsArray, isLoading: false });
             } catch (error: any) {
                 const errorMessage = error.response?.data?.message || 'Failed to fetch conversations';
+                console.error('❌ [chatStore] Error fetching conversations:', error);
                 set({ error: errorMessage, isLoading: false, conversations: [] });
             }
         },

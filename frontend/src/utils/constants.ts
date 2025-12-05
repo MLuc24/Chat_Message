@@ -23,7 +23,7 @@ export const API_ENDPOINTS = {
         CONVERSATIONS: '/chat/conversations',
         CONVERSATION: (id: string) => `/chat/conversations/${id}`,
         MESSAGES: (conversationId: string) => `/chat/conversations/${conversationId}/messages`,
-        SEND_MESSAGE: '/chat/messages',
+        SEND_MESSAGE: (conversationId: string) => `/chat/conversations/${conversationId}/messages`,
         DELETE_MESSAGE: (messageId: string) => `/chat/messages/${messageId}`,
     },
 } as const;

@@ -6,8 +6,13 @@ export interface Message {
     id: string;
     conversationId: string;
     senderId: string;
-    content: string;
-    type?: 'text' | 'image' | 'file';
+    text?: string;
+    type: 'text' | 'image' | 'video' | 'file' | 'audio';
+    fileUrl?: string;
+    fileName?: string;
+    fileSize?: number;
+    isEdited?: boolean;
+    isDeleted?: boolean;
     createdAt: string;
     updatedAt: string;
 }
@@ -33,8 +38,8 @@ export interface Conversation {
 
 export interface SendMessageDto {
     conversationId: string;
-    content: string;
-    type?: 'text' | 'image' | 'file';
+    text: string;
+    type?: 'text' | 'image' | 'video' | 'file' | 'audio';
 }
 
 export interface CreateConversationDto {

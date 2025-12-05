@@ -86,7 +86,7 @@ export const ConversationItem = memo(function ConversationItem({
 
                 {lastMessage && (
                     <p className="text-sm text-gray-600 truncate">
-                        {lastMessage.content}
+                        {lastMessage.text}
                     </p>
                 )}
             </div>

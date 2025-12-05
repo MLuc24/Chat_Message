@@ -52,7 +52,7 @@ export const MessageItem = memo(function MessageItem({
                             : 'bg-gray-200 text-gray-900 rounded-bl-none'
                         }`}
                 >
-                    <p className="text-sm break-words whitespace-pre-wrap">{message.content}</p>
+                    <p className="text-sm break-words whitespace-pre-wrap">{message.text}</p>
                 </div>
 
                 {/* Timestamp and read status */}

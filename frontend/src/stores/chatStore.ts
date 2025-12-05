@@ -71,7 +71,7 @@ export const useChatStore = create<ChatState>()(
         // Send message
         sendMessage: async (dto) => {
             try {
-                const message = await chatService.sendMessage(dto);
+                const message = await chatService.sendMessage(dto.conversationId, dto);
                 get().addMessage(message);
             } catch (error: any) {
                 const errorMessage = error.response?.data?.message || 'Failed to send message';

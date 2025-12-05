@@ -26,7 +26,7 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
 
         const dto: SendMessageDto = {
             conversationId,
-            content,
+            text: content,
             type: 'text',
         };
 

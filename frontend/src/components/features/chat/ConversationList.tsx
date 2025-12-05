@@ -31,7 +31,7 @@ export function ConversationList({
     const filteredConversations = conversationList.filter((conv) => {
         // For group conversations, use name; for direct, we'll need populated participants later
         const conversationName = (conv.name || conv.type || '').toLowerCase();
-        const lastMessage = (conv.lastMessage?.content || '').toLowerCase();
+        const lastMessage = (conv.lastMessage?.text || '').toLowerCase();
         const query = searchQuery.toLowerCase();
         return conversationName.includes(query) || lastMessage.includes(query);
     });

@@ -86,14 +86,35 @@ export const useAuthStore = create<AuthState>()(
 
                 // Logout action
                 logout: () => {
+                    // Prevent multiple logout calls
+                    const currentToken = get().token;
+                    if (!currentToken) {
+                        console.warn('[authStore] Already logged out');
+                        return;
+                    }
+
+                    console.log('[authStore] Logging out...');
+                    
                     authService.logout();
                     socketManager.disconnect();
+                    
+                    // Clear all auth data
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('refresh_token');
+                    localStorage.removeItem('user');
+                    
                     set({
                         user: null,
                         token: null,
                         refreshToken: null,
                         error: null,
                     });
+
+                    // Navigate to login without reload
+                    if (window.location.pathname !== '/login') {
+                        window.history.pushState({}, '', '/login');
+                        window.dispatchEvent(new PopStateEvent('popstate'));
+                    }
                 },
 
                 // Set user

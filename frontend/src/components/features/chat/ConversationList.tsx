@@ -18,9 +18,12 @@ export function ConversationList({
     const { conversations, fetchConversations, isLoading } = useChat();
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Fetch conversations once on mount
+    // Fetch conversations once on mount (only if authenticated)
     useEffect(() => {
-        fetchConversations();
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+            fetchConversations();
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 

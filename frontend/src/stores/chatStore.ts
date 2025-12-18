@@ -39,6 +39,13 @@ export const useChatStore = create<ChatState>()(
 
         // Fetch conversations
         fetchConversations: async () => {
+            // Check if user is authenticated
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                console.warn('[chatStore] No auth token, skipping fetch conversations');
+                return;
+            }
+
             set({ isLoading: true, error: null });
             try {
                 const conversations = await chatService.getConversations();
@@ -48,6 +55,13 @@ export const useChatStore = create<ChatState>()(
                 const conversationsArray = Array.isArray(conversations) ? conversations : [];
                 set({ conversations: conversationsArray, isLoading: false });
             } catch (error: any) {
+                // Don't set error if it's a 401 (handled by interceptor)
+                if (error.response?.status === 401) {
+                    console.warn('[chatStore] Unauthorized, token may be expired');
+                    set({ isLoading: false });
+                    return;
+                }
+
                 const errorMessage = error.response?.data?.message || 'Failed to fetch conversations';
                 console.error('❌ [chatStore] Error fetching conversations:', error);
                 set({ error: errorMessage, isLoading: false, conversations: [] });

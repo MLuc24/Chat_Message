@@ -237,6 +237,28 @@ export class MessageService {
     }
   }
 
+  async markConversationAsRead(conversationId: string, userId: string) {
+    // Check membership
+    await this.checkMembership(conversationId, userId);
+
+    // Get all unread messages in this conversation
+    const messages = await this.prisma.message.findMany({
+      where: {
+        conversationId,
+        senderId: { not: userId }, // Don't mark own messages
+        isDeleted: false,
+      },
+      select: { id: true },
+    });
+
+    // Mark all as seen
+    for (const message of messages) {
+      await this.createMessageStatus(message.id, userId, 'seen');
+    }
+
+    return { success: true, markedCount: messages.length };
+  }
+
   private async createMessageStatus(
     messageId: string,
     userId: string,

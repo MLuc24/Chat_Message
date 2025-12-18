@@ -41,15 +41,28 @@ export const ConversationItem = memo(function ConversationItem({
     const unreadCount = conversation.unreadCount || 0;
     const lastMessage = conversation.lastMessage;
 
-    // Display name: group name or "Direct Chat" for direct conversations
+    // Get current user ID to exclude from participants
+    const currentUserId = localStorage.getItem('user') 
+        ? JSON.parse(localStorage.getItem('user') || '{}').id 
+        : null;
+
+    // Get the other participant (not current user)
+    const otherParticipant = conversation.participants?.find(
+        (p) => p.id !== currentUserId
+    );
+
+    // Display name: group name or other participant's name
     const displayName = conversation.type === 'group'
         ? (conversation.name || 'Group Chat')
-        : (conversation.participants?.[0]?.name || 'Direct Chat');
+        : (otherParticipant?.name || 'Direct Chat');
 
-    // Avatar: use group avatar or first participant's avatar
+    // Avatar: use group avatar or other participant's avatar
     const avatarUrl = conversation.type === 'group'
         ? conversation.avatarUrl
-        : conversation.participants?.[0]?.avatar;
+        : otherParticipant?.avatar;
+
+    // Online status for direct conversations
+    const isOnline = conversation.type === 'direct' && otherParticipant?.isOnline;
 
     return (
         <div
@@ -68,6 +81,7 @@ export const ConversationItem = memo(function ConversationItem({
                 alt={displayName}
                 name={displayName}
                 size="md"
+                status={isOnline ? 'online' : undefined}
             />
 
             {/* Content */}
@@ -90,12 +104,10 @@ export const ConversationItem = memo(function ConversationItem({
                         </p>
                     )}
 
-                    {/* Unread Badge */}
+                    {/* Unread Indicator - just a dot */}
                     {unreadCount > 0 && (
                         <div className="flex-shrink-0 ml-2">
-                            <div className="min-w-[18px] h-[18px] px-1.5 flex items-center justify-center bg-blue-600 text-white text-xs font-bold rounded-full">
-                                {unreadCount > 99 ? '99+' : unreadCount}
-                            </div>
+                            <div className="w-2.5 h-2.5 bg-blue-600 rounded-full"></div>
                         </div>
                     )}
                 </div>

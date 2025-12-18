@@ -46,6 +46,10 @@ class ChatService {
         return data;
     }
 
+    async markConversationAsRead(conversationId: string): Promise<void> {
+        await http.post(`${API_ENDPOINTS.CHAT.CONVERSATIONS}/${conversationId}/read`);
+    }
+
     async deleteMessage(messageId: string): Promise<void> {
         await http.delete(API_ENDPOINTS.CHAT.DELETE_MESSAGE(messageId));
     }

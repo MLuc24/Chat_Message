@@ -57,7 +57,9 @@ export class ConversationService {
             try {
               // Fetch user details from user-service via HTTP
               const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:3002';
-              const response = await fetch(`${userServiceUrl}/users/batch`, {
+              const url = `${userServiceUrl}/batch`;
+              
+              const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userIds: otherUserIds }),

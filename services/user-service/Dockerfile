@@ -8,9 +8,9 @@ RUN apk add --no-cache openssl
 COPY package*.json ./
 COPY prisma ./prisma/
 
-RUN npm ci
+RUN npm install --legacy-peer-deps
 COPY . .
-RUN npx prisma generate
+RUN ./node_modules/.bin/prisma generate
 RUN npm run build
 
 FROM node:20-alpine
@@ -24,9 +24,9 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/package*.json ./
 
-# Install production dependencies and rebuild native modules
-RUN npm ci --only=production
+# Install production dependencies
+RUN npm install --only=production --legacy-peer-deps
 
 EXPOSE 3002
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main"]
+CMD ["sh", "-c", "npx prisma generate && node dist/src/main.js"]

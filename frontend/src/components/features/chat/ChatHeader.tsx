@@ -10,6 +10,24 @@ interface ChatHeaderProps {
     onViewInfo?: () => void;
 }
 
+function getLastSeenText(lastSeen?: Date | string | null): string {
+    if (!lastSeen) return 'Không hoạt động';
+    
+    const now = new Date();
+    const lastSeenDate = new Date(lastSeen);
+    const diffMs = now.getTime() - lastSeenDate.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    
+    if (diffMinutes < 1) return 'Vừa hoạt động';
+    if (diffMinutes < 60) return `Hoạt động ${diffMinutes} phút trước`;
+    
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `Hoạt động ${diffHours} giờ trước`;
+    
+    const diffDays = Math.floor(diffHours / 24);
+    return `Hoạt động ${diffDays} ngày trước`;
+}
+
 export const ChatHeader = memo(function ChatHeader({
     recipient,
     onVoiceCall,
@@ -38,7 +56,7 @@ export const ChatHeader = memo(function ChatHeader({
                         {displayName}
                     </h2>
                     <p className={`text-sm ${isOnline ? 'text-green-600' : 'text-gray-500'}`}>
-                        {isOnline ? 'Đang hoạt động' : 'Không hoạt động'}
+                        {isOnline ? 'Đang hoạt động' : getLastSeenText(recipient?.lastSeen)}
                     </p>
                 </div>
             </div>

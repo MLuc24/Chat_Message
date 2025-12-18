@@ -5,6 +5,7 @@ import { RedisModule } from './redis/redis.module';
 import { StorageModule } from './storage/storage.module';
 import { ConversationModule } from './conversation/conversation.module';
 import { MessageModule } from './message/message.module';
+import { UploadModule } from './common/upload.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { MessageModule } from './message/message.module';
     PrismaModule,
     RedisModule,
     StorageModule,
+    UploadModule,
     ConversationModule,
     MessageModule,
   ],

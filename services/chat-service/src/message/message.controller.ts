@@ -8,16 +8,25 @@ import {
   Body,
   Headers,
   Query,
-  UploadedFile,
-  UseInterceptors,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
 import { MessageService } from './message.service';
 import { SendMessageDto, UpdateMessageDto } from './dto';
+import { UploadService } from '../common/services/upload.service';
+import {
+  GenerateUploadSignatureDto,
+  UploadSignatureResponseDto,
+} from '../common/dto/upload.dto';
 
+@ApiTags('Messages')
 @Controller()
 export class MessageController {
-  constructor(private readonly messageService: MessageService) {}
+  constructor(
+    private readonly messageService: MessageService,
+    private readonly uploadService: UploadService,
+  ) {}
 
   @Get('health')
   health() {
@@ -48,14 +57,16 @@ export class MessageController {
     return this.messageService.sendMessage(conversationId, userId, sendDto);
   }
 
-  @Post('conversations/:conversationId/messages/file')
-  @UseInterceptors(FileInterceptor('file'))
-  async sendFileMessage(
-    @Param('conversationId') conversationId: string,
+  @Post('upload/signature')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Generate signed upload URL for media messages' })
+  @ApiResponse({ status: 200, type: UploadSignatureResponseDto })
+  @ApiHeader({ name: 'x-user-id', required: true })
+  async generateUploadSignature(
     @Headers('x-user-id') userId: string,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
-    return this.messageService.sendFileMessage(conversationId, userId, file);
+    @Body() dto: GenerateUploadSignatureDto,
+  ): Promise<UploadSignatureResponseDto> {
+    return this.uploadService.generateUploadSignature(dto);
   }
 
   @Put('messages/:id')
@@ -89,5 +100,13 @@ export class MessageController {
     @Headers('x-user-id') userId: string,
   ) {
     return this.messageService.markAsSeen(messageId, userId);
+  }
+
+  @Post('conversations/:conversationId/read')
+  async markConversationAsRead(
+    @Param('conversationId') conversationId: string,
+    @Headers('x-user-id') userId: string,
+  ) {
+    return this.messageService.markConversationAsRead(conversationId, userId);
   }
 }

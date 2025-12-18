@@ -19,9 +19,14 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
         ? conversations?.find((c) => c.id === conversationId)
         : null;
 
-    // Get recipient from participants
-    // For direct conversations, this should be the other person
-    const recipient = currentConversation?.participants?.[0];
+    // Get recipient from participants (exclude current user)
+    const currentUserId = localStorage.getItem('user')
+        ? JSON.parse(localStorage.getItem('user') || '{}').id
+        : null;
+
+    const recipient = currentConversation?.participants?.find(
+        (p) => p.id !== currentUserId
+    );
 
     const handleSendMessage = async (content: string) => {
         if (!conversationId) return;

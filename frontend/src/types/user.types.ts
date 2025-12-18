@@ -4,8 +4,12 @@ export interface User {
     id: string;
     email: string;
     name: string;
-    avatar?: string;
+    bio?: string;
+    avatarUrl?: string; // Cloudinary URL
+    avatarPublicId?: string; // Cloudinary public ID for deletion
+    avatar?: string; // Legacy field for backward compatibility
     isOnline?: boolean;
+    lastSeen?: Date | string | null;
     createdAt: string;
     updatedAt: string;
 }

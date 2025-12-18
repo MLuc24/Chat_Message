@@ -53,7 +53,20 @@ export const useChatStore = create<ChatState>()(
 
                 // Ensure conversations is always an array
                 const conversationsArray = Array.isArray(conversations) ? conversations : [];
-                set({ conversations: conversationsArray, isLoading: false });
+                
+                // Initialize online users from current socket state
+                const currentOnlineUsers = get().onlineUsers;
+                
+                // Update participants with current online status
+                const conversationsWithOnlineStatus = conversationsArray.map((conv) => ({
+                    ...conv,
+                    participants: conv.participants?.map((p) => ({
+                        ...p,
+                        isOnline: currentOnlineUsers.has(p.id),
+                    })),
+                }));
+                
+                set({ conversations: conversationsWithOnlineStatus, isLoading: false });
             } catch (error: any) {
                 // Don't set error if it's a 401 (handled by interceptor)
                 if (error.response?.status === 401) {
@@ -100,7 +113,7 @@ export const useChatStore = create<ChatState>()(
         },
 
         // Set active conversation
-        setActiveConversation: (conversationId) => {
+        setActiveConversation: async (conversationId) => {
             const previousConversationId = get().activeConversationId;
 
             // Don't do anything if it's the same conversation
@@ -127,6 +140,13 @@ export const useChatStore = create<ChatState>()(
 
                 // Mark conversation as read (clear unread count and bold styling)
                 get().markConversationAsRead(conversationId);
+
+                // Mark as read on backend
+                try {
+                    await chatService.markConversationAsRead(conversationId);
+                } catch (error) {
+                    console.error('[chatStore] Failed to mark conversation as read:', error);
+                }
 
                 // Fetch messages if not already loaded
                 const { messages } = get();
@@ -180,12 +200,29 @@ export const useChatStore = create<ChatState>()(
         // Initialize WebSocket listeners
         initWebSocketListeners: () => {
             // Join active conversation when socket connects/reconnects
-            const handleAuthenticated = () => {
+            const handleAuthenticated = (data: { userId: string }) => {
+                console.log('[chatStore] Socket authenticated:', data);
+                
                 const { activeConversationId } = get();
                 if (activeConversationId && socketManager.isConnected) {
                     console.log('[chatStore] Socket authenticated, joining conversation:', activeConversationId);
                     socketManager.emit(WS_EVENTS.JOIN_CONVERSATION, { conversationId: activeConversationId });
                 }
+
+                // Mark current user as online in local state
+                set((state) => {
+                    const newOnlineUsers = new Set(state.onlineUsers);
+                    newOnlineUsers.add(data.userId);
+                    return {
+                        onlineUsers: newOnlineUsers,
+                        conversations: state.conversations.map((conv) => ({
+                            ...conv,
+                            participants: conv.participants?.map((p) =>
+                                p.id === data.userId ? { ...p, isOnline: true } : p
+                            ),
+                        })),
+                    };
+                });
             };
             socketManager.on('authenticated', handleAuthenticated);
 
@@ -261,9 +298,10 @@ export const useChatStore = create<ChatState>()(
             });
 
             // Listen for general presence updates
-            socketManager.on('presence_update', ({ userId, status }: { userId: string; status: string }) => {
-                console.log('[chatStore] Presence update:', userId, status);
+            socketManager.on('presence_update', ({ userId, status, timestamp }: { userId: string; status: string; timestamp?: string }) => {
                 const isOnline = status === 'online';
+                const lastSeen = !isOnline && timestamp ? new Date(timestamp) : undefined;
+                
                 set((state) => {
                     const newOnlineUsers = new Set(state.onlineUsers);
                     if (isOnline) {
@@ -276,7 +314,7 @@ export const useChatStore = create<ChatState>()(
                         conversations: state.conversations.map((conv) => ({
                             ...conv,
                             participants: conv.participants?.map((p) =>
-                                p.id === userId ? { ...p, isOnline } : p
+                                p.id === userId ? { ...p, isOnline, lastSeen: lastSeen || p.lastSeen } : p
                             ),
                         })),
                     };

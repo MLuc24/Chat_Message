@@ -7,16 +7,25 @@ import {
   Body,
   Query,
   Headers,
-  UploadedFile,
-  UseInterceptors,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { UpdateProfileDto } from './dto';
+import { UploadService } from '../common/services/upload.service';
+import {
+  GenerateUploadSignatureDto,
+  UploadSignatureResponseDto,
+} from '../common/dto/upload.dto';
 
+@ApiTags('Users')
 @Controller()
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly uploadService: UploadService,
+  ) {}
 
   @Get('health')
   health() {
@@ -36,19 +45,35 @@ export class UserController {
     return this.userService.updateProfile(userId, updateDto);
   }
 
-  @Post('avatar')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadAvatar(
+  @Post('upload/signature')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Generate signed upload URL for direct client upload' })
+  @ApiResponse({ status: 200, type: UploadSignatureResponseDto })
+  @ApiHeader({ name: 'x-user-id', required: true })
+  async generateUploadSignature(
     @Headers('x-user-id') userId: string,
-    @UploadedFile() file: Express.Multer.File,
+    @Body() dto: GenerateUploadSignatureDto,
+  ): Promise<UploadSignatureResponseDto> {
+    return this.uploadService.generateUploadSignature(dto);
+  }
+
+  @Put('avatar')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update user avatar URL after upload' })
+  @ApiResponse({ status: 200, description: 'Avatar updated' })
+  @ApiHeader({ name: 'x-user-id', required: true })
+  async updateAvatar(
+    @Headers('x-user-id') userId: string,
+    @Body() body: { avatarUrl: string; publicId: string },
   ) {
-    return this.userService.uploadAvatar(userId, file);
+    return this.userService.updateAvatar(userId, body.avatarUrl, body.publicId);
   }
 
   @Post('batch')
   async getBatchUsers(@Body() body: { userIds: string[] }) {
     return this.userService.getBatchUsers(body.userIds);
   }
+
 
   @Get('search')
   async searchUsers(@Query('q') query: string) {

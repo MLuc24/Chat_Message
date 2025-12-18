@@ -8,9 +8,20 @@ export interface Message {
     senderId: string;
     text?: string;
     type: 'text' | 'image' | 'video' | 'file' | 'audio';
+    
+    // Media fields (for images/videos uploaded to Cloudinary)
+    mediaUrl?: string;
+    mediaPublicId?: string;
+    thumbnailUrl?: string; // For videos
+    mediaWidth?: number;
+    mediaHeight?: number;
+    mediaDuration?: number; // For videos/audio (in seconds)
+    
+    // Legacy file fields (for backward compatibility)
     fileUrl?: string;
     fileName?: string;
     fileSize?: number;
+    
     isEdited?: boolean;
     isDeleted?: boolean;
     createdAt: string;
@@ -38,8 +49,16 @@ export interface Conversation {
 
 export interface SendMessageDto {
     conversationId: string;
-    text: string;
-    type?: 'text' | 'image' | 'video' | 'file' | 'audio';
+    text?: string;
+    type: 'text' | 'image' | 'video' | 'file' | 'audio';
+    
+    // Media fields (for Cloudinary uploads)
+    mediaUrl?: string;
+    mediaPublicId?: string;
+    thumbnailUrl?: string;
+    mediaWidth?: number;
+    mediaHeight?: number;
+    mediaDuration?: number;
 }
 
 export interface CreateConversationDto {

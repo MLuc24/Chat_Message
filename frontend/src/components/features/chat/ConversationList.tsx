@@ -45,12 +45,37 @@ export function ConversationList({
     }
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full bg-white">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+                <h1 className="text-2xl font-bold text-gray-900">Đoạn chat</h1>
+                <div className="flex items-center gap-2">
+                    {/* Camera/Video Icon */}
+                    <button
+                        className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                        title="New video call"
+                    >
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
+                        </svg>
+                    </button>
+                    {/* Create New Chat Icon */}
+                    <button
+                        className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                        title="New message"
+                    >
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
             {/* Search Bar */}
-            <div className="p-4 border-b border-gray-200">
+            <div className="px-3 py-2">
                 <div className="relative">
                     <svg
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -64,16 +89,16 @@ export function ConversationList({
                     </svg>
                     <input
                         type="text"
-                        placeholder="Search conversations..."
+                        placeholder="Tìm kiếm trên Messenger"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full pl-9 pr-4 py-2 bg-gray-100 border-0 rounded-full text-sm focus:outline-none focus:bg-gray-200 transition-colors"
                     />
                 </div>
             </div>
 
             {/* Conversations List */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto bg-white">
                 {filteredConversations.length === 0 ? (
                     <EmptyState
                         icon={
@@ -99,7 +124,7 @@ export function ConversationList({
                         }
                     />
                 ) : (
-                    <div className="divide-y divide-gray-200">
+                    <div>
                         {filteredConversations.map((conversation) => (
                             <ConversationItem
                                 key={conversation.id}

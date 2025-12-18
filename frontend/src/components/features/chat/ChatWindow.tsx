@@ -19,7 +19,23 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
         ? conversations?.find((c) => c.id === conversationId)
         : null;
 
-    const recipient = currentConversation?.participants?.[0];
+    // Get recipient from participants, or create a fallback from conversation data
+    let recipient = currentConversation?.participants?.[0];
+
+    // Fallback: if participants not populated, create a minimal user object
+    if (!recipient && currentConversation) {
+        const otherMember = currentConversation.members?.find(m => m.userId !== 'current-user');
+        if (otherMember || currentConversation.name) {
+            recipient = {
+                id: otherMember?.userId || 'unknown',
+                name: currentConversation.name || 'User',
+                email: '',
+                isOnline: false,
+                createdAt: currentConversation.createdAt,
+                updatedAt: currentConversation.updatedAt,
+            };
+        }
+    }
 
     const handleSendMessage = async (content: string) => {
         if (!conversationId) return;
@@ -65,7 +81,7 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
     }
 
     return (
-        <div className="flex flex-col h-full bg-white">
+        <div className="flex flex-col h-full">
             {/* Chat Header */}
             <ChatHeader
                 recipient={recipient}

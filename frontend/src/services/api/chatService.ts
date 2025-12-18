@@ -11,7 +11,9 @@ import { API_ENDPOINTS } from '@/utils/constants';
 
 class ChatService {
     async getConversations(): Promise<Conversation[]> {
-        const { data } = await http.get<{ conversations: Conversation[] }>(API_ENDPOINTS.CHAT.CONVERSATIONS);
+        const { data } = await http.get<{ conversations: Conversation[] }>(
+            `${API_ENDPOINTS.CHAT.CONVERSATIONS}?populate=participants`
+        );
         return data.conversations;
     }
 
@@ -38,7 +40,7 @@ class ChatService {
         // Extract only text and type for the request body (conversationId is in URL)
         const { text, type } = dto;
         const { data } = await http.post<Message>(
-            API_ENDPOINTS.CHAT.SEND_MESSAGE(conversationId), 
+            API_ENDPOINTS.CHAT.SEND_MESSAGE(conversationId),
             { text, type }
         );
         return data;

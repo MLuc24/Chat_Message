@@ -62,7 +62,7 @@ pgdata/
 postgres-data/
 
 # ==================== DOCKER ====================
-docker-compose.override.yml
+*.yml
 .docker/
 
 # ==================== PRISMA ====================
@@ -98,3 +98,87 @@ uploads/
 storage/
 public/uploads/
 *.md
+
+# ==================== SCRIPTS & EXECUTABLES ====================
+*.bat
+*.exe
+*.cmd
+*.sh
+*.ps1
+!scripts/*.sh  # Keep infrastructure scripts
+!infrastructure/*.sh
+
+# ==================== CONFIGURATION FILES ====================
+*.yml
+docker-compose.override.yml
+
+# ==================== SECURITY & SENSITIVE ====================
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+secrets/
+config/secrets/
+*.secret
+
+# ==================== BACKUP & ARCHIVE ====================
+*.zip
+*.tar.gz
+*.7z
+*.rar
+*.bak
+*.backup
+*.old
+
+# ==================== CACHE & TEMP ====================
+.cache/
+*.cache
+.cache/
+.npm/
+.yarn/
+.pnpm/
+.parcel-cache/
+.vite/
+.eslintcache
+.stylelintcache
+
+# ==================== DEBUG & PROFILING ====================
+*.prof
+*.heapdump
+*.cpuprofile
+debug.log
+trace.log
+
+# ==================== EDITOR BACKUPS ====================
+*~
+*.orig
+*.rej
+*.patch
+
+# ==================== LOCAL DEVELOPMENT ====================
+.local/
+*.local
+.env.local
+.env.*.local
+
+# ==================== TESTING ====================
+test-results/
+playwright-report/
+playwright/.cache/
+test-results.xml
+junit.xml
+
+# ==================== DOCUMENTATION ====================
+*.pdf
+*.doc
+*.docx
+docs/private/
+internal-docs/
+
+# ==================== CI/CD ====================
+.github/workflows/*.yml
+
+# ==================== SETUP GUIDES ====================
+GIT_SETUP.md
+*.setup.md

@@ -64,6 +64,7 @@ export const useChatStore = create<ChatState>()(
                 }));
             } catch (error: any) {
                 const errorMessage = error.response?.data?.message || 'Failed to fetch messages';
+                console.error('❌ [chatStore] Error fetching messages:', error);
                 set({ error: errorMessage, isLoading: false });
             }
         },

@@ -1,6 +1,5 @@
 import { memo } from 'react';
 import { Avatar } from '../../common/Avatar';
-import { Badge } from '../../common/Badge';
 import type { Conversation } from '../../../types/chat.types';
 
 interface ConversationItemProps {
@@ -56,10 +55,10 @@ export const ConversationItem = memo(function ConversationItem({
         <div
             onClick={onClick}
             className={`
-        flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors
+        flex items-center gap-3 px-4 py-3 cursor-pointer transition-all
         ${isActive
-                    ? 'bg-blue-50 border-l-4 border-blue-500'
-                    : 'hover:bg-gray-50 border-l-4 border-transparent'
+                    ? 'bg-blue-50'
+                    : 'hover:bg-gray-100'
                 }
       `}
         >
@@ -73,8 +72,8 @@ export const ConversationItem = memo(function ConversationItem({
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-semibold text-gray-900 truncate">
+                <div className="flex items-center justify-between mb-0.5">
+                    <h3 className={`font-semibold text-sm truncate ${isActive ? 'text-gray-900' : 'text-gray-900'}`}>
                         {displayName}
                     </h3>
                     {lastMessage && (
@@ -84,19 +83,23 @@ export const ConversationItem = memo(function ConversationItem({
                     )}
                 </div>
 
-                {lastMessage && (
-                    <p className="text-sm text-gray-600 truncate">
-                        {lastMessage.text}
-                    </p>
-                )}
-            </div>
+                <div className="flex items-center justify-between">
+                    {lastMessage && (
+                        <p className={`text-xs truncate ${unreadCount > 0 ? 'font-semibold text-gray-900' : 'text-gray-600'}`}>
+                            {lastMessage.text}
+                        </p>
+                    )}
 
-            {/* Unread Badge */}
-            {unreadCount > 0 && (
-                <Badge variant="info" size="sm">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                </Badge>
-            )}
+                    {/* Unread Badge */}
+                    {unreadCount > 0 && (
+                        <div className="flex-shrink-0 ml-2">
+                            <div className="min-w-[18px] h-[18px] px-1.5 flex items-center justify-center bg-blue-600 text-white text-xs font-bold rounded-full">
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
 });

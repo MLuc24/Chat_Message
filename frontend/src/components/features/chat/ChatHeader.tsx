@@ -21,7 +21,7 @@ export const ChatHeader = memo(function ChatHeader({
     }
 
     return (
-        <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
+        <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shadow-sm">
             {/* Recipient Info */}
             <div className="flex items-center gap-3">
                 <Avatar
@@ -29,29 +29,29 @@ export const ChatHeader = memo(function ChatHeader({
                     alt={recipient.name}
                     name={recipient.name}
                     size="md"
-                    status={recipient.isOnline ? 'online' : 'offline'}
+                    status={recipient.isOnline ? 'online' : undefined}
                 />
 
                 <div>
-                    <h2 className="font-semibold text-gray-900">
+                    <h2 className="font-semibold text-base text-gray-900">
                         {recipient.name}
                     </h2>
-                    <p className="text-sm text-gray-500">
-                        {recipient.isOnline ? 'Active now' : 'Offline'}
+                    <p className={`text-sm ${recipient.isOnline ? 'text-green-600' : 'text-gray-500'}`}>
+                        {recipient.isOnline ? 'Đang hoạt động' : 'Không hoạt động'}
                     </p>
                 </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
                 {/* Voice Call */}
                 {onVoiceCall && (
                     <button
                         onClick={onVoiceCall}
-                        className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                        className="p-2.5 text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
                         aria-label="Voice call"
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -66,10 +66,10 @@ export const ChatHeader = memo(function ChatHeader({
                 {onVideoCall && (
                     <button
                         onClick={onVideoCall}
-                        className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                        className="p-2.5 text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
                         aria-label="Video call"
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -84,10 +84,10 @@ export const ChatHeader = memo(function ChatHeader({
                 <Dropdown
                     trigger={
                         <button
-                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                            className="p-2.5 text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
                             aria-label="More options"
                         >
-                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                             </svg>
                         </button>

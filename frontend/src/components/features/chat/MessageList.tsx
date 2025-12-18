@@ -90,12 +90,30 @@ export const MessageList = memo(function MessageList({
                 const isOwn = message.senderId === user?.id;
                 const showDateSeparator = shouldShowDateSeparator(message, messageList[index - 1]);
 
+                // Check if next message is from a different sender (or is last message)
+                const nextMessage = messageList[index + 1];
+                const isLastInGroup = !nextMessage || nextMessage.senderId !== message.senderId;
+
+                // Create sender object: use otherUser if available, otherwise create fallback
+                let sender = otherUser;
+                if (!isOwn && !sender) {
+                    // Fallback: create a minimal user from senderId
+                    sender = {
+                        id: message.senderId,
+                        name: 'User', // Fallback name
+                        email: '',
+                        isOnline: false,
+                        createdAt: message.createdAt,
+                        updatedAt: message.updatedAt,
+                    };
+                }
+
                 return (
                     <div key={message.id}>
                         {/* Date Separator */}
                         {showDateSeparator && (
-                            <div className="flex items-center justify-center my-4">
-                                <span className="px-3 py-1 text-xs font-medium text-gray-600 bg-white rounded-full shadow-sm">
+                            <div className="flex items-center justify-center my-6">
+                                <span className="px-3 py-1 text-xs font-medium text-gray-500 bg-white rounded-full shadow-sm">
                                     {formatDateSeparator(message.createdAt)}
                                 </span>
                             </div>
@@ -105,7 +123,8 @@ export const MessageList = memo(function MessageList({
                         <MessageItem
                             message={message}
                             isOwn={isOwn}
-                            sender={isOwn ? undefined : otherUser}
+                            sender={isOwn ? undefined : sender}
+                            showAvatar={isLastInGroup}
                         />
                     </div>
                 );

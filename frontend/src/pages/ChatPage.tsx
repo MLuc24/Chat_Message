@@ -12,10 +12,7 @@ export function ChatPage() {
         <MainLayout>
             <div className="flex h-full">
                 {/* Left Sidebar - Conversations */}
-                <div className="w-80 border-r border-gray-200 bg-white flex flex-col">
-                    <div className="flex-shrink-0 px-4 py-3 border-b border-gray-200 bg-white">
-                        <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
-                    </div>
+                <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
                     <ConversationList
                         onSelectConversation={setActiveConversationId}
                         activeConversationId={activeConversationId}
@@ -23,7 +20,7 @@ export function ChatPage() {
                 </div>
 
                 {/* Right Side - Chat Window */}
-                <div className="flex-1">
+                <div className="flex-1 bg-white">
                     <ChatWindow conversationId={activeConversationId} />
                 </div>
             </div>

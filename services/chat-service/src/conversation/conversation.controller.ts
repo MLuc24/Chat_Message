@@ -17,8 +17,11 @@ export class ConversationController {
   constructor(private readonly conversationService: ConversationService) {}
 
   @Get()
-  async getConversations(@Headers('x-user-id') userId: string) {
-    return this.conversationService.getUserConversations(userId);
+  async getConversations(
+    @Headers('x-user-id') userId: string,
+    @Query('populate') populate?: string,
+  ) {
+    return this.conversationService.getUserConversations(userId, populate);
   }
 
   @Get(':id')

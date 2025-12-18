@@ -43,6 +43,14 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(`Client disconnected: ${client.id}`);
 
     if (client.userId) {
+      // Leave all rooms
+      const rooms = Array.from(client.rooms);
+      rooms.forEach((room) => {
+        if (room !== client.id) {
+          client.leave(room);
+        }
+      });
+
       // Remove from authenticated sockets
       this.authenticatedSockets.delete(client.id);
 
@@ -121,8 +129,15 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     const { conversationId } = data;
-    await client.join(conversationId);
+    
+    // Check if already in room to prevent duplicate joins
+    const rooms = Array.from(client.rooms);
+    if (rooms.includes(conversationId)) {
+      console.log(`User ${client.userId} already in conversation ${conversationId}`);
+      return;
+    }
 
+    await client.join(conversationId);
     console.log(`User ${client.userId} joined conversation ${conversationId}`);
   }
 

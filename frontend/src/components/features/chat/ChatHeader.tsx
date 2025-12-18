@@ -16,28 +16,29 @@ export const ChatHeader = memo(function ChatHeader({
     onVideoCall,
     onViewInfo,
 }: ChatHeaderProps) {
-    if (!recipient) {
-        return null;
-    }
+    // Show placeholder if no recipient
+    const displayName = recipient?.name || 'User';
+    const displayAvatar = recipient?.avatar;
+    const isOnline = recipient?.isOnline ?? false;
 
     return (
         <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shadow-sm">
             {/* Recipient Info */}
             <div className="flex items-center gap-3">
                 <Avatar
-                    src={recipient.avatar}
-                    alt={recipient.name}
-                    name={recipient.name}
+                    src={displayAvatar}
+                    alt={displayName}
+                    name={displayName}
                     size="md"
-                    status={recipient.isOnline ? 'online' : undefined}
+                    status={isOnline ? 'online' : undefined}
                 />
 
                 <div>
                     <h2 className="font-semibold text-base text-gray-900">
-                        {recipient.name}
+                        {displayName}
                     </h2>
-                    <p className={`text-sm ${recipient.isOnline ? 'text-green-600' : 'text-gray-500'}`}>
-                        {recipient.isOnline ? 'Đang hoạt động' : 'Không hoạt động'}
+                    <p className={`text-sm ${isOnline ? 'text-green-600' : 'text-gray-500'}`}>
+                        {isOnline ? 'Đang hoạt động' : 'Không hoạt động'}
                     </p>
                 </div>
             </div>

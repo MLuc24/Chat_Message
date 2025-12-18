@@ -51,8 +51,7 @@ export const useAuthStore = create<AuthState>()(
                             isLoading: false,
                         });
 
-                        // Connect WebSocket
-                        socketManager.connect(response.tokens.accessToken);
+                        // WebSocket will be connected by useWebSocket hook
                     } catch (error: any) {
                         const errorMessage = error.response?.data?.message || 'Login failed';
                         set({ error: errorMessage, isLoading: false });
@@ -77,8 +76,7 @@ export const useAuthStore = create<AuthState>()(
                             isLoading: false,
                         });
 
-                        // Connect WebSocket
-                        socketManager.connect(response.tokens.accessToken);
+                        // WebSocket will be connected by useWebSocket hook
                     } catch (error: any) {
                         const errorMessage = error.response?.data?.message || 'Registration failed';
                         set({ error: errorMessage, isLoading: false });
@@ -115,8 +113,7 @@ export const useAuthStore = create<AuthState>()(
                             const user = JSON.parse(userStr);
                             set({ user, token, refreshToken });
 
-                            // Reconnect WebSocket
-                            socketManager.connect(token);
+                            // WebSocket will be connected by useWebSocket hook
                         } catch (error) {
                             console.error('Failed to initialize auth:', error);
                             get().logout();

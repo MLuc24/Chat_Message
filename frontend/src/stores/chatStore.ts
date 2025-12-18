@@ -12,6 +12,7 @@ interface ChatState {
     conversations: Conversation[];
     messages: Record<string, Message[]>; // conversationId -> messages
     activeConversationId: string | null;
+    onlineUsers: Set<string>; // Set of online user IDs
     isLoading: boolean;
     error: string | null;
 
@@ -23,6 +24,7 @@ interface ChatState {
     addMessage: (message: Message) => void;
     clearError: () => void;
     initWebSocketListeners: () => void;
+    markConversationAsRead: (conversationId: string) => void;
 }
 
 export const useChatStore = create<ChatState>()(
@@ -31,6 +33,7 @@ export const useChatStore = create<ChatState>()(
         conversations: [],
         messages: {},
         activeConversationId: null,
+        onlineUsers: new Set<string>(),
         isLoading: false,
         error: null,
 
@@ -39,6 +42,7 @@ export const useChatStore = create<ChatState>()(
             set({ isLoading: true, error: null });
             try {
                 const conversations = await chatService.getConversations();
+                console.log('[chatStore] Fetched conversations:', conversations);
 
                 // Ensure conversations is always an array
                 const conversationsArray = Array.isArray(conversations) ? conversations : [];
@@ -85,16 +89,30 @@ export const useChatStore = create<ChatState>()(
         setActiveConversation: (conversationId) => {
             const previousConversationId = get().activeConversationId;
 
+            // Don't do anything if it's the same conversation
+            if (previousConversationId === conversationId) {
+                return;
+            }
+
             // Leave previous conversation
-            if (previousConversationId) {
+            if (previousConversationId && socketManager.isConnected) {
                 socketManager.emit(WS_EVENTS.LEAVE_CONVERSATION, { conversationId: previousConversationId });
+                console.log('[chatStore] Left conversation:', previousConversationId);
             }
 
             set({ activeConversationId: conversationId });
 
             if (conversationId) {
-                // Join new conversation
-                socketManager.emit(WS_EVENTS.JOIN_CONVERSATION, { conversationId });
+                // Join new conversation (only if socket is connected)
+                if (socketManager.isConnected) {
+                    socketManager.emit(WS_EVENTS.JOIN_CONVERSATION, { conversationId });
+                    console.log('[chatStore] Joined conversation:', conversationId);
+                } else {
+                    console.warn('[chatStore] Socket not connected, will join on connect');
+                }
+
+                // Mark conversation as read (clear unread count and bold styling)
+                get().markConversationAsRead(conversationId);
 
                 // Fetch messages if not already loaded
                 const { messages } = get();
@@ -134,10 +152,32 @@ export const useChatStore = create<ChatState>()(
         // Clear error
         clearError: () => set({ error: null }),
 
+        // Mark conversation as read (clear unread count)
+        markConversationAsRead: (conversationId) => {
+            set((state) => ({
+                conversations: state.conversations.map((conv) =>
+                    conv.id === conversationId
+                        ? { ...conv, unreadCount: 0 }
+                        : conv
+                ),
+            }));
+        },
+
         // Initialize WebSocket listeners
         initWebSocketListeners: () => {
+            // Join active conversation when socket connects/reconnects
+            const handleAuthenticated = () => {
+                const { activeConversationId } = get();
+                if (activeConversationId && socketManager.isConnected) {
+                    console.log('[chatStore] Socket authenticated, joining conversation:', activeConversationId);
+                    socketManager.emit(WS_EVENTS.JOIN_CONVERSATION, { conversationId: activeConversationId });
+                }
+            };
+            socketManager.on('authenticated', handleAuthenticated);
+
             // Listen for new messages
             socketManager.on(WS_EVENTS.MESSAGE_NEW, (message: Message) => {
+                console.log('[chatStore] Received new message via WebSocket:', message);
                 get().addMessage(message);
             });
 
@@ -165,6 +205,66 @@ export const useChatStore = create<ChatState>()(
                             ...state.messages,
                             [conversationId]: conversationMessages.filter((m) => m.id !== messageId),
                         },
+                    };
+                });
+            });
+
+            // Listen for presence updates
+            socketManager.on(WS_EVENTS.USER_ONLINE, ({ userId }: { userId: string }) => {
+                console.log('[chatStore] User came online:', userId);
+                set((state) => {
+                    const newOnlineUsers = new Set(state.onlineUsers);
+                    newOnlineUsers.add(userId);
+                    return {
+                        onlineUsers: newOnlineUsers,
+                        // Update participant's online status in conversations
+                        conversations: state.conversations.map((conv) => ({
+                            ...conv,
+                            participants: conv.participants?.map((p) =>
+                                p.id === userId ? { ...p, isOnline: true } : p
+                            ),
+                        })),
+                    };
+                });
+            });
+
+            socketManager.on(WS_EVENTS.USER_OFFLINE, ({ userId }: { userId: string }) => {
+                console.log('[chatStore] User went offline:', userId);
+                set((state) => {
+                    const newOnlineUsers = new Set(state.onlineUsers);
+                    newOnlineUsers.delete(userId);
+                    return {
+                        onlineUsers: newOnlineUsers,
+                        // Update participant's online status in conversations
+                        conversations: state.conversations.map((conv) => ({
+                            ...conv,
+                            participants: conv.participants?.map((p) =>
+                                p.id === userId ? { ...p, isOnline: false } : p
+                            ),
+                        })),
+                    };
+                });
+            });
+
+            // Listen for general presence updates
+            socketManager.on('presence_update', ({ userId, status }: { userId: string; status: string }) => {
+                console.log('[chatStore] Presence update:', userId, status);
+                const isOnline = status === 'online';
+                set((state) => {
+                    const newOnlineUsers = new Set(state.onlineUsers);
+                    if (isOnline) {
+                        newOnlineUsers.add(userId);
+                    } else {
+                        newOnlineUsers.delete(userId);
+                    }
+                    return {
+                        onlineUsers: newOnlineUsers,
+                        conversations: state.conversations.map((conv) => ({
+                            ...conv,
+                            participants: conv.participants?.map((p) =>
+                                p.id === userId ? { ...p, isOnline } : p
+                            ),
+                        })),
                     };
                 });
             });

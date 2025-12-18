@@ -16,6 +16,7 @@ export function useChat(conversationId?: string) {
         setActiveConversation,
         clearError,
         initWebSocketListeners,
+        markConversationAsRead,
     } = useChatStore();
 
     // Initialize WebSocket listeners on mount
@@ -49,5 +50,7 @@ export function useChat(conversationId?: string) {
         sendMessage,
         setActiveConversation,
         clearError,
+        markConversationAsRead,
+        onlineUsers: useChatStore((state) => state.onlineUsers),
     };
 }

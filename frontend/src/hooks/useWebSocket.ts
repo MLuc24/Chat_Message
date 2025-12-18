@@ -1,15 +1,24 @@
 // useWebSocket Hook - WebSocket lifecycle management
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { socketManager } from '@/services/websocket/socketManager';
 import { useAuthStore } from '@/stores/authStore';
 
 export function useWebSocket() {
     const token = useAuthStore((state) => state.token);
+    const hasConnected = useRef(false);
 
     useEffect(() => {
-        if (token && !socketManager.isConnected) {
+        // Only connect once per token
+        if (token && !hasConnected.current && !socketManager.isConnected) {
+            console.log('[useWebSocket] Connecting socket...');
             socketManager.connect(token);
+            hasConnected.current = true;
+        }
+
+        // Reset flag when token changes (logout/login)
+        if (!token) {
+            hasConnected.current = false;
         }
 
         return () => {

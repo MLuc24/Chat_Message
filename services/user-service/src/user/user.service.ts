@@ -66,6 +66,40 @@ export class UserService {
     return { avatarUrl };
   }
 
+  async getBatchUsers(userIds: string[]) {
+    if (!userIds || userIds.length === 0) {
+      return [];
+    }
+
+    const users = await this.prisma.user.findMany({
+      where: {
+        id: { in: userIds },
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        bio: true,
+        avatarUrl: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    // Get online status for each user
+    const usersWithStatus = await Promise.all(
+      users.map(async (user) => {
+        const isOnline = await this.redis.isUserOnline(user.id);
+        return {
+          ...user,
+          isOnline,
+        };
+      }),
+    );
+
+    return usersWithStatus;
+  }
+
   async searchUsers(query: string) {
     const users = await this.prisma.user.findMany({
       where: {

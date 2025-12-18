@@ -8,23 +8,41 @@ type EventHandler = (...args: any[]) => void;
 class SocketManager {
     private socket: Socket | null = null;
     private eventHandlers = new Map<string, Set<EventHandler>>();
+    private isConnecting = false;
 
     connect(token: string): void {
-        if (this.socket?.connected) {
-            console.warn('Socket already connected');
+        // Prevent multiple simultaneous connection attempts
+        if (this.isConnecting) {
+            console.warn('[WebSocket] Connection already in progress');
             return;
         }
 
+        if (this.socket?.connected) {
+            console.warn('[WebSocket] Socket already connected');
+            return;
+        }
+
+        // Disconnect existing socket if any
+        if (this.socket) {
+            this.socket.removeAllListeners();
+            this.socket.disconnect();
+        }
+
+        this.isConnecting = true;
+        console.log('[WebSocket] Connecting to:', config.wsUrl);
         this.socket = io(config.wsUrl, {
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionAttempts: 5,
+            transports: ['websocket', 'polling'],
         });
 
         this.socket.on('connect', () => {
-            console.log('[WebSocket] Connected');
+            this.isConnecting = false;
+            console.log('[WebSocket] Connected successfully! Socket ID:', this.socket?.id);
             // Authenticate after connection
             this.socket?.emit('authenticate', { token });
+            console.log('[WebSocket] Authentication token sent');
         });
 
         this.socket.on('authenticated', (data) => {
@@ -37,33 +55,37 @@ class SocketManager {
         });
 
         this.socket.on('disconnect', (reason) => {
+            this.isConnecting = false;
             console.log('[WebSocket] Disconnected:', reason);
         });
 
         this.socket.on('connect_error', (error) => {
+            this.isConnecting = false;
             console.error('[WebSocket] Connection error:', error);
         });
 
-        // Re-register all event handlers on reconnect
-        this.socket.on('connect', () => {
-            this.eventHandlers.forEach((handlers, event) => {
-                handlers.forEach((handler) => {
-                    this.socket?.on(event, handler);
-                });
-            });
+        // Re-authenticate on reconnect (handlers are already registered)
+        this.socket.on('reconnect', () => {
+            console.log('[WebSocket] Reconnected, re-authenticating...');
+            this.socket?.emit('authenticate', { token });
         });
     }
 
     disconnect(): void {
         if (this.socket) {
+            this.socket.removeAllListeners();
             this.socket.disconnect();
             this.socket = null;
             this.eventHandlers.clear();
+            this.isConnecting = false;
             console.log('[WebSocket] Disconnected and cleaned up');
         }
     }
 
     on(event: string, handler: EventHandler): void {
+        // Remove existing handler first to prevent duplicates
+        this.off(event, handler);
+
         if (!this.eventHandlers.has(event)) {
             this.eventHandlers.set(event, new Set());
         }

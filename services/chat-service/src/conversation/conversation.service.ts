@@ -11,7 +11,7 @@ import { CreateConversationDto, UpdateConversationDto } from './dto';
 export class ConversationService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getUserConversations(userId: string) {
+  async getUserConversations(userId: string, populate?: string) {
     const conversations = await this.prisma.conversation.findMany({
       where: {
         members: {
@@ -40,15 +40,45 @@ export class ConversationService {
       orderBy: { updatedAt: 'desc' },
     });
 
-    // Calculate unread count for each conversation
+    // Calculate unread count and populate participants if requested
     const conversationsWithUnread = await Promise.all(
       conversations.map(async (conv) => {
         const unreadCount = await this.getUnreadCount(conv.id, userId);
+        
+        let participants = undefined;
+        
+        // If populate=participants, fetch user details from user-service
+        if (populate?.includes('participants')) {
+          const otherUserIds = conv.members
+            .filter(m => m.userId !== userId)
+            .map(m => m.userId);
+          
+          if (otherUserIds.length > 0) {
+            try {
+              // Fetch user details from user-service via HTTP
+              const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:3002';
+              const response = await fetch(`${userServiceUrl}/users/batch`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userIds: otherUserIds }),
+              });
+              
+              if (response.ok) {
+                const users = await response.json();
+                participants = users;
+              }
+            } catch (error) {
+              console.error('Failed to fetch user details:', error);
+            }
+          }
+        }
+        
         return {
           ...conv,
           lastMessage: conv.messages[0] || null,
           messages: undefined,
           unreadCount,
+          participants,
         };
       }),
     );

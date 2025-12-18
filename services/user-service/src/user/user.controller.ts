@@ -45,6 +45,11 @@ export class UserController {
     return this.userService.uploadAvatar(userId, file);
   }
 
+  @Post('batch')
+  async getBatchUsers(@Body() body: { userIds: string[] }) {
+    return this.userService.getBatchUsers(body.userIds);
+  }
+
   @Get('search')
   async searchUsers(@Query('q') query: string) {
     return this.userService.searchUsers(query);

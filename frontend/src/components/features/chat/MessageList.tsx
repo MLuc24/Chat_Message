@@ -1,10 +1,12 @@
 // MessageList Component - Scrollable list of messages
 
-import { memo, useEffect, useRef } from 'react';
+import { memo, useEffect, useRef, useMemo } from 'react';
 import { MessageItem } from './MessageItem';
 import { TypingIndicator } from './TypingIndicator';
 import { EmptyState } from '../../common/EmptyState';
+import { MediaModal } from '../../common/MediaModal';
 import { useAuth } from '../../../hooks/useAuth';
+import { useMediaModal } from '../../../hooks/useMediaModal';
 import type { Message } from '../../../types/chat.types';
 import type { User } from '../../../types/user.types';
 
@@ -49,9 +51,33 @@ export const MessageList = memo(function MessageList({
 }: MessageListProps) {
     const { user } = useAuth();
     const bottomRef = useRef<HTMLDivElement>(null);
+    const {
+        isOpen,
+        currentMedia,
+        mediaGallery,
+        openModal,
+        closeModal,
+        goToPrevious,
+        goToNext,
+        goToIndex,
+        hasPrevious,
+        hasNext,
+        currentIndex,
+    } = useMediaModal();
 
     // Ensure messages is always an array to prevent "map is not a function" errors
     const messageList = Array.isArray(messages) ? messages : [];
+
+    // Filter media messages for gallery navigation
+    const mediaMessages = useMemo(
+        () => messageList.filter((msg) => msg.type === 'image' || msg.type === 'video'),
+        [messageList]
+    );
+
+    // Handle media click
+    const handleMediaClick = (message: Message) => {
+        openModal(message, mediaMessages);
+    };
 
     // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
@@ -126,6 +152,7 @@ export const MessageList = memo(function MessageList({
                             isOwn={isOwn}
                             sender={isOwn ? undefined : sender}
                             showAvatar={isLastInGroup}
+                            onMediaClick={handleMediaClick}
                         />
                     </div>
                 );
@@ -138,6 +165,22 @@ export const MessageList = memo(function MessageList({
 
             {/* Auto-scroll anchor */}
             <div ref={bottomRef} />
+
+            {/* Media Modal */}
+            {currentMedia && (
+                <MediaModal
+                    media={currentMedia}
+                    isOpen={isOpen}
+                    onClose={closeModal}
+                    onPrevious={goToPrevious}
+                    onNext={goToNext}
+                    onJumpTo={goToIndex}
+                    hasPrevious={hasPrevious}
+                    hasNext={hasNext}
+                    gallery={mediaGallery}
+                    currentIndex={currentIndex}
+                />
+            )}
         </div>
     );
 });

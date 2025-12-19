@@ -1,9 +1,11 @@
 // ChatInfoPanel - Right side panel showing chat info, media, and settings
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { User } from '../../../types/user.types';
 import type { Message } from '../../../types/chat.types';
 import { chatService } from '../../../services/api/chatService';
+import { MediaModal } from '../../common/MediaModal';
+import { useMediaModal } from '../../../hooks/useMediaModal';
 import {
     XMarkIcon,
     EnvelopeIcon,
@@ -50,9 +52,25 @@ export function ChatInfoPanel({
     });
     const [isLoadingSettings, setIsLoadingSettings] = useState(false);
 
+    // Media modal hook
+    const {
+        isOpen: isMediaModalOpen,
+        currentMedia,
+        mediaGallery,
+        openModal,
+        closeModal,
+        goToPrevious,
+        goToNext,
+        goToIndex,
+        hasPrevious,
+        hasNext,
+        currentIndex,
+    } = useMediaModal();
+
     // Filter media messages (images and videos)
-    const mediaMessages = sharedMedia.filter(
-        (msg) => msg.type === 'image' || msg.type === 'video'
+    const mediaMessages = useMemo(
+        () => sharedMedia.filter((msg) => msg.type === 'image' || msg.type === 'video'),
+        [sharedMedia]
     );
 
     // Filter document messages
@@ -62,6 +80,11 @@ export function ChatInfoPanel({
 
     // Show max 6 media thumbnails
     const displayedMedia = showAllMedia ? mediaMessages : mediaMessages.slice(0, 6);
+
+    // Handle media click to open modal
+    const handleMediaClick = (media: Message) => {
+        openModal(media, mediaMessages);
+    };
 
     const loadSettings = useCallback(async () => {
         try {
@@ -221,6 +244,7 @@ export function ChatInfoPanel({
                                     <div
                                         key={media.id}
                                         className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 hover:opacity-90 transition-opacity cursor-pointer group"
+                                        onClick={() => handleMediaClick(media)}
                                     >
                                         <img
                                             src={media.thumbnailUrl || media.mediaUrl || media.fileUrl}
@@ -228,7 +252,7 @@ export function ChatInfoPanel({
                                             className="w-full h-full object-cover"
                                         />
                                         {media.type === 'video' && (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors pointer-events-none">
                                                 <div className="w-10 h-10 bg-white/90 rounded-full flex items-center justify-center">
                                                     <PlayIcon className="w-5 h-5 text-gray-700 ml-0.5" />
                                                 </div>
@@ -236,7 +260,7 @@ export function ChatInfoPanel({
                                         )}
                                         {/* See All overlay for last item */}
                                         {!showAllMedia && index === 5 && mediaMessages.length > 6 && (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/60 pointer-events-none">
                                                 <span className="text-white font-semibold text-sm">
                                                     See All
                                                 </span>
@@ -398,6 +422,22 @@ export function ChatInfoPanel({
                     </div>
                 </div>
             </div>
+
+            {/* Media Modal */}
+            {currentMedia && (
+                <MediaModal
+                    media={currentMedia}
+                    isOpen={isMediaModalOpen}
+                    onClose={closeModal}
+                    onPrevious={goToPrevious}
+                    onNext={goToNext}
+                    onJumpTo={goToIndex}
+                    hasPrevious={hasPrevious}
+                    hasNext={hasNext}
+                    gallery={mediaGallery}
+                    currentIndex={currentIndex}
+                />
+            )}
         </>
     );
 }

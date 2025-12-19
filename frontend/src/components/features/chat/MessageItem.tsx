@@ -10,6 +10,7 @@ interface MessageItemProps {
     isOwn: boolean;
     sender?: User;
     showAvatar?: boolean;
+    onMediaClick?: (message: Message) => void;
 }
 
 function formatMessageTime(date: Date | string): string {
@@ -25,8 +26,15 @@ export const MessageItem = memo(function MessageItem({
     message,
     isOwn,
     sender,
-    showAvatar = true
+    showAvatar = true,
+    onMediaClick
 }: MessageItemProps) {
+    const handleMediaClick = () => {
+        if ((message.type === 'image' || message.type === 'video') && onMediaClick) {
+            onMediaClick(message);
+        }
+    };
+
     return (
         <div className={`flex items-start ${isOwn ? 'justify-end' : 'justify-start'} mb-1 gap-2`}>
             {/* Avatar for received messages - only show on last message in group */}
@@ -65,16 +73,21 @@ export const MessageItem = memo(function MessageItem({
                     {message.type === 'image' && (
                         <>
                             {message.mediaUrl ? (
-                                <img
-                                    src={message.mediaUrl}
-                                    alt="Shared image"
-                                    className="w-64 h-64 object-cover cursor-pointer rounded-lg"
-                                    onClick={() => window.open(message.mediaUrl, '_blank')}
-                                    onError={(e) => {
-                                        console.error('Failed to load image:', message.mediaUrl);
-                                        e.currentTarget.style.display = 'none';
-                                    }}
-                                />
+                                <div className="relative group cursor-pointer" onClick={handleMediaClick}>
+                                    <img
+                                        src={message.mediaUrl}
+                                        alt="Shared image"
+                                        className="w-64 h-64 object-cover rounded-lg hover:opacity-90 transition-opacity"
+                                        onError={(e) => {
+                                            console.error('Failed to load image:', message.mediaUrl);
+                                            e.currentTarget.style.display = 'none';
+                                        }}
+                                    />
+                                    {/* Hover overlay */}
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 rounded-lg pointer-events-none">
+                                        <span className="text-white text-sm font-medium">Click to view</span>
+                                    </div>
+                                </div>
                             ) : (
                                 <div className="px-4 py-2 text-sm text-gray-500">Image not available</div>
                             )}
@@ -85,12 +98,21 @@ export const MessageItem = memo(function MessageItem({
                     {message.type === 'video' && (
                         <>
                             {message.mediaUrl ? (
-                                <video
-                                    src={message.mediaUrl}
-                                    controls
-                                    className="w-80 h-auto rounded-lg"
-                                    poster={message.thumbnailUrl}
-                                />
+                                <div className="relative group cursor-pointer" onClick={handleMediaClick}>
+                                    <video
+                                        src={message.mediaUrl}
+                                        className="w-80 h-auto rounded-lg pointer-events-none"
+                                        poster={message.thumbnailUrl}
+                                    />
+                                    {/* Play button overlay */}
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg group-hover:bg-black/40 transition-colors">
+                                        <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                            <svg className="w-8 h-8 text-gray-900 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
                             ) : (
                                 <div className="px-4 py-2 text-sm text-gray-500">Video not available</div>
                             )}

@@ -5,6 +5,7 @@ import { devtools } from 'zustand/middleware';
 import { chatService } from '@/services/api/chatService';
 import { socketManager } from '@/services/websocket/socketManager';
 import { WS_EVENTS } from '@/utils/constants';
+import { useAuthStore } from './authStore';
 import type { Conversation, Message, SendMessageDto } from '@/types/chat.types';
 
 interface ChatState {
@@ -120,7 +121,7 @@ export const useChatStore = create<ChatState>()(
                 return;
             }
 
-            // Leave previous conversation
+            // Leave previous conversation for typing indicators
             if (previousConversationId && socketManager.isConnected) {
                 socketManager.emit(WS_EVENTS.LEAVE_CONVERSATION, { conversationId: previousConversationId });
             }
@@ -128,7 +129,7 @@ export const useChatStore = create<ChatState>()(
             set({ activeConversationId: conversationId });
 
             if (conversationId) {
-                // Join new conversation (only if socket is connected)
+                // Join new conversation for typing indicators only
                 if (socketManager.isConnected) {
                     socketManager.emit(WS_EVENTS.JOIN_CONVERSATION, { conversationId });
                 }
@@ -153,6 +154,11 @@ export const useChatStore = create<ChatState>()(
 
         // Add message (called by WebSocket or after sending)
         addMessage: (message) => {
+            const { activeConversationId } = get();
+            const currentUserId = useAuthStore.getState().user?.id;
+            const isActiveConversation = message.conversationId === activeConversationId;
+            const isOwnMessage = message.senderId === currentUserId;
+
             set((state) => {
                 const conversationMessages = state.messages[message.conversationId] || [];
 
@@ -168,11 +174,19 @@ export const useChatStore = create<ChatState>()(
                 };
             });
 
-            // Update conversation's last message
+            // Update conversation's last message and unread count
             set((state) => ({
                 conversations: state.conversations.map((conv) =>
                     conv.id === message.conversationId
-                        ? { ...conv, lastMessage: message }
+                        ? {
+                              ...conv,
+                              lastMessage: message,
+                              // Increment unread count only if not viewing this conversation
+                              // and the message is from someone else (not current user)
+                              unreadCount: !isActiveConversation && !isOwnMessage
+                                  ? (conv.unreadCount || 0) + 1
+                                  : conv.unreadCount,
+                          }
                         : conv
                 ),
             }));

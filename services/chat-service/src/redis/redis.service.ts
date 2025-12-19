@@ -23,10 +23,10 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     await this.subscriber.quit();
   }
 
-  async publishMessage(conversationId: string, message: any): Promise<void> {
+  async publishMessage(conversationId: string, message: any, memberIds: string[]): Promise<void> {
     await this.publisher.publish(
       `conversation:${conversationId}`,
-      JSON.stringify({ type: 'new_message', data: message }),
+      JSON.stringify({ type: 'new_message', data: message, memberIds }),
     );
   }
 

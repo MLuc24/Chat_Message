@@ -30,8 +30,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(private readonly redis: RedisService) {
     // Register message handler for Redis pub/sub
-    this.redis.setMessageHandler((conversationId, message) => {
-      this.broadcastMessage(conversationId, message);
+    this.redis.setMessageHandler((conversationId, message, memberIds) => {
+      this.broadcastMessageToParticipants(conversationId, message, memberIds);
     });
   }
 
@@ -573,7 +573,25 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(`🖥️ Screen share: ${client.userId} ${isSharing ? 'started' : 'stopped'}`);
   }
 
-  // Method to send message from external services
+  // Method to send message to all participants regardless of which conversation they're viewing
+  async broadcastMessageToParticipants(conversationId: string, message: any, memberIds: string[]) {
+    console.log(`📨 Broadcasting message to ${memberIds.length} participants in conversation ${conversationId}`);
+    
+    for (const userId of memberIds) {
+      // Get user's socket ID from Redis
+      const socketId = await this.redis.getSocketId(userId);
+      
+      if (socketId) {
+        // Send message directly to user's socket
+        this.server.to(socketId).emit('message_new', message);
+        console.log(`✅ Sent message to user ${userId} (socket: ${socketId})`);
+      } else {
+        console.log(`⚠️ User ${userId} is offline, message will be fetched on reconnect`);
+      }
+    }
+  }
+
+  // Legacy method for room-based broadcasting (kept for typing indicators)
   async broadcastMessage(conversationId: string, message: any) {
     this.server.to(conversationId).emit('message_new', message);
   }

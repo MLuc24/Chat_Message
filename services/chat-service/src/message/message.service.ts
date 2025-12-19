@@ -90,8 +90,12 @@ export class MessageService {
     // Create 'sent' status for sender
     await this.createMessageStatus(message.id, userId, 'sent');
 
-    // Publish to Redis for realtime delivery
-    await this.redis.publishMessage(conversationId, message);
+    // Get all member IDs for realtime delivery
+    const memberIds = await this.getConversationMemberIds(conversationId);
+    console.log(`[MessageService] Publishing message to ${memberIds.length} participants:`, memberIds);
+
+    // Publish to Redis for realtime delivery to all participants
+    await this.redis.publishMessage(conversationId, message, memberIds);
 
     return message;
   }
@@ -139,8 +143,12 @@ export class MessageService {
     // Create status
     await this.createMessageStatus(message.id, userId, 'sent');
 
-    // Publish to Redis
-    await this.redis.publishMessage(conversationId, message);
+    // Get all member IDs for realtime delivery
+    const memberIds = await this.getConversationMemberIds(conversationId);
+    console.log(`[MessageService] Publishing file message to ${memberIds.length} participants:`, memberIds);
+
+    // Publish to Redis for realtime delivery to all participants
+    await this.redis.publishMessage(conversationId, message, memberIds);
 
     return message;
   }
@@ -241,6 +249,14 @@ export class MessageService {
     if (!member) {
       throw new ForbiddenException('Not a member of this conversation');
     }
+  }
+
+  private async getConversationMemberIds(conversationId: string): Promise<string[]> {
+    const members = await this.prisma.conversationMember.findMany({
+      where: { conversationId },
+      select: { userId: true },
+    });
+    return members.map((m) => m.userId);
   }
 
   async markConversationAsRead(conversationId: string, userId: string) {

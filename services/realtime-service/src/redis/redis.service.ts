@@ -6,7 +6,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private client: Redis;
   private publisher: Redis;
   private subscriber: Redis;
-  private messageHandler: ((conversationId: string, message: any) => void) | null = null;
+  private messageHandler: ((conversationId: string, message: any, memberIds: string[]) => void) | null = null;
 
   async onModuleInit() {
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
@@ -31,7 +31,8 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         const conversationId = channel.replace('conversation:', '');
 
         if (data.type === 'new_message' && this.messageHandler) {
-          this.messageHandler(conversationId, data.data);
+          // Pass memberIds to handler for direct delivery to all participants
+          this.messageHandler(conversationId, data.data, data.memberIds || []);
         }
       } catch (error) {
         console.error('❌ Error processing Redis message:', error);
@@ -57,11 +58,14 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   async setSocketId(userId: string, socketId: string): Promise<void> {
-    await this.client.setex(`socket:${userId}`, 300, socketId);
+    await this.client.setex(`socket:${userId}`, 3600, socketId); // 1 hour TTL
+    console.log(`[Redis] Set socket ID for user ${userId}: ${socketId}`);
   }
 
   async getSocketId(userId: string): Promise<string | null> {
-    return await this.client.get(`socket:${userId}`);
+    const socketId = await this.client.get(`socket:${userId}`);
+    console.log(`[Redis] Get socket ID for user ${userId}: ${socketId || 'NOT FOUND'}`);
+    return socketId;
   }
 
   async removeSocketId(userId: string): Promise<void> {
@@ -80,7 +84,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     return this.subscriber;
   }
 
-  setMessageHandler(handler: (conversationId: string, message: any) => void): void {
+  setMessageHandler(handler: (conversationId: string, message: any, memberIds: string[]) => void): void {
     this.messageHandler = handler;
   }
 }

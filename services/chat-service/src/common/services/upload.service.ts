@@ -52,15 +52,10 @@ export class UploadService {
     if (dto.publicId) {
       params.public_id = dto.publicId;
     }
-
-    // Add resource_type for videos
-    if (dto.uploadType === 'chat_video') {
-      params.resource_type = 'video';
-    }
     
-    // Note: We don't include transformation in the signature params
+    // Note: resource_type is determined by the upload URL endpoint (image/upload or video/upload)
+    // We don't include it in signature params
     // Transformations will be applied by Cloudinary after upload based on folder settings
-    // or can be applied when retrieving the URL
 
     // Generate signature
     const signature = this.cloudinary.utils.api_sign_request(

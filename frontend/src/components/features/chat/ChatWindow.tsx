@@ -77,8 +77,6 @@ export function ChatWindow({ conversationId, onStartVoiceCall }: ChatWindowProps
             thumbnailUrl: metadata?.thumbnailUrl,
         };
 
-        console.log('📤 Sending media message:', dto);
-
         try {
             await sendMessage(dto);
         } catch (error) {

@@ -22,7 +22,6 @@ export function ChatInput({ onSend, onSendMedia, disabled }: ChatInputProps) {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const imageInputRef = useRef<HTMLInputElement>(null);
-    const videoInputRef = useRef<HTMLInputElement>(null);
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
@@ -96,48 +95,33 @@ export function ChatInput({ onSend, onSendMedia, disabled }: ChatInputProps) {
             )}
 
             <div className="flex items-center gap-2">
-                {/* Hidden file inputs */}
+                {/* Hidden file input for both image and video */}
                 <input
                     ref={imageInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/*,video/*"
                     className="hidden"
-                    onChange={(e) => handleFileSelect(e, 'image')}
-                    disabled={disabled || isUploading}
-                />
-                <input
-                    ref={videoInputRef}
-                    type="file"
-                    accept="video/*"
-                    className="hidden"
-                    onChange={(e) => handleFileSelect(e, 'video')}
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                            const type = file.type.startsWith('video/') ? 'video' : 'image';
+                            handleFileSelect(e, type);
+                        }
+                    }}
                     disabled={disabled || isUploading}
                 />
 
-                {/* Add Media Circle Plus */}
+                {/* Add Media Circle Plus - supports both image and video */}
                 <button
                     type="button"
                     className="text-blue-600 hover:text-blue-700 transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Add media"
+                    title="Add photo or video"
                     disabled={disabled || isUploading}
-                    onClick={() => videoInputRef.current?.click()}
+                    onClick={() => imageInputRef.current?.click()}
                 >
                     <svg className="w-9 h-9" fill="currentColor" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
                         <path d="M13 8h-2v3H8v2h3v3h2v-3h3v-2h-3z" />
-                    </svg>
-                </button>
-
-                {/* Image Icon */}
-                <button
-                    type="button"
-                    className="text-blue-600 hover:text-blue-700 transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Add photo"
-                    disabled={disabled || isUploading}
-                    onClick={() => imageInputRef.current?.click()}
-                >
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71z" />
                     </svg>
                 </button>
 

@@ -9,6 +9,7 @@ async function main() {
   await prisma.user.deleteMany();
 
   // Create sample user profiles (matching auth-service users)
+  // Note: avatarUrl is null by default, users can upload their own avatars
   const users = await Promise.all([
     prisma.user.create({
       data: {
@@ -16,7 +17,6 @@ async function main() {
         email: 'alice@example.com',
         name: 'Alice Johnson',
         bio: 'Software engineer passionate about building great products',
-        avatarUrl: 'https://i.pravatar.cc/150?img=1',
       },
     }),
     prisma.user.create({
@@ -25,7 +25,6 @@ async function main() {
         email: 'bob@example.com',
         name: 'Bob Smith',
         bio: 'Product designer | UI/UX enthusiast',
-        avatarUrl: 'https://i.pravatar.cc/150?img=2',
       },
     }),
     prisma.user.create({
@@ -34,7 +33,6 @@ async function main() {
         email: 'charlie@example.com',
         name: 'Charlie Brown',
         bio: 'Full-stack developer | Coffee lover ☕',
-        avatarUrl: 'https://i.pravatar.cc/150?img=3',
       },
     }),
     prisma.user.create({
@@ -43,7 +41,6 @@ async function main() {
         email: 'diana@example.com',
         name: 'Diana Prince',
         bio: 'Data scientist | Machine learning researcher',
-        avatarUrl: 'https://i.pravatar.cc/150?img=4',
       },
     }),
     prisma.user.create({
@@ -52,7 +49,6 @@ async function main() {
         email: 'edward@example.com',
         name: 'Edward Norton',
         bio: 'DevOps engineer | Cloud infrastructure specialist',
-        avatarUrl: 'https://i.pravatar.cc/150?img=5',
       },
     }),
   ]);

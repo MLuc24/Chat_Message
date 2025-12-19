@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { profileService } from '@/services/api/profileService';
 import { getErrorMessage } from '@/utils/errors';
+import { useAuthStore } from './authStore';
 import type { 
   UpdateProfileDto, 
   ChangePasswordDto, 
@@ -108,15 +109,28 @@ export const useProfileStore = create<ProfileState>()(
         try {
           const { avatarUrl } = await profileService.uploadAvatar(file);
           
-          // Update profile with new avatar
-          const currentProfile = get().profile;
-          if (currentProfile) {
-            set({ 
-              profile: { ...currentProfile, avatarUrl },
-              isUploading: false,
-              successMessage: 'Avatar uploaded successfully',
-            });
+          // Fetch fresh profile data from server to ensure consistency
+          const updatedProfile = await profileService.getCurrentProfile();
+          
+          set({ 
+            profile: updatedProfile,
+            isUploading: false,
+            successMessage: 'Avatar uploaded successfully',
+          });
+
+          // Update authStore user with new avatar
+          const authUser = useAuthStore.getState().user;
+          if (authUser) {
+            const updatedUser = { 
+              ...authUser, 
+              avatarUrl: updatedProfile.avatarUrl,
+            };
+            useAuthStore.getState().setUser(updatedUser);
+            
+            // Also update localStorage to persist across page reloads
+            localStorage.setItem('user', JSON.stringify(updatedUser));
           }
+
           return true;
         } catch (error: unknown) {
           set({ 
@@ -144,6 +158,17 @@ export const useProfileStore = create<ProfileState>()(
               successMessage: 'Avatar removed successfully',
             });
           }
+
+          // Update authStore user to remove avatar
+          const authUser = useAuthStore.getState().user;
+          if (authUser) {
+            const updatedUser = { ...authUser, avatarUrl: undefined };
+            useAuthStore.getState().setUser(updatedUser);
+            
+            // Also update localStorage
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+          }
+
           return true;
         } catch (error: unknown) {
           set({ 

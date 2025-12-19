@@ -50,6 +50,14 @@ export const useChatStore = create<ChatState>()(
             try {
                 const conversations = await chatService.getConversations();
                 console.log('[chatStore] Fetched conversations:', conversations);
+                
+                // Debug: Log first conversation's participants
+                if (conversations && conversations.length > 0) {
+                    console.log('[chatStore] First conversation participants:', conversations[0].participants);
+                    if (conversations[0].participants && conversations[0].participants.length > 0) {
+                        console.log('[chatStore] First participant data:', conversations[0].participants[0]);
+                    }
+                }
 
                 // Ensure conversations is always an array
                 const conversationsArray = Array.isArray(conversations) ? conversations : [];

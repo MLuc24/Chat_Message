@@ -4,7 +4,7 @@ export interface User {
     id: string;
     email: string;
     name: string;
-    username: string;
+    username?: string; // Optional - not all services return this
     bio?: string;
     phone?: string;
     avatarUrl?: string; // From user-service only

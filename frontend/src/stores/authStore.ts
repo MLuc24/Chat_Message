@@ -24,6 +24,16 @@ interface AuthState {
     refreshUserProfile: () => Promise<void>;
 }
 
+// Helper to sync both auth and profile stores
+const syncProfileStores = async (refreshUserProfile: () => Promise<void>) => {
+    await Promise.all([
+        refreshUserProfile(),
+        import('./profileStore').then(({ useProfileStore }) => 
+            useProfileStore.getState().fetchProfile()
+        ),
+    ]);
+};
+
 export const useAuthStore = create<AuthState>()(
     devtools(
         persist(
@@ -41,7 +51,6 @@ export const useAuthStore = create<AuthState>()(
                     try {
                         const response = await authService.login(credentials);
 
-                        // Save to localStorage
                         localStorage.setItem('auth_token', response.tokens.accessToken);
                         localStorage.setItem('refresh_token', response.tokens.refreshToken);
 
@@ -52,7 +61,7 @@ export const useAuthStore = create<AuthState>()(
                             isLoading: false,
                         });
 
-                        // WebSocket will be connected by useWebSocket hook
+                        await syncProfileStores(get().refreshUserProfile);
                     } catch (error: any) {
                         const errorMessage = error.response?.data?.message || 'Login failed';
                         set({ error: errorMessage, isLoading: false });
@@ -66,7 +75,6 @@ export const useAuthStore = create<AuthState>()(
                     try {
                         const response = await authService.register(data);
 
-                        // Save to localStorage
                         localStorage.setItem('auth_token', response.tokens.accessToken);
                         localStorage.setItem('refresh_token', response.tokens.refreshToken);
 
@@ -77,7 +85,7 @@ export const useAuthStore = create<AuthState>()(
                             isLoading: false,
                         });
 
-                        // WebSocket will be connected by useWebSocket hook
+                        await syncProfileStores(get().refreshUserProfile);
                     } catch (error: any) {
                         const errorMessage = error.response?.data?.message || 'Registration failed';
                         set({ error: errorMessage, isLoading: false });
@@ -87,19 +95,12 @@ export const useAuthStore = create<AuthState>()(
 
                 // Logout action
                 logout: () => {
-                    // Prevent multiple logout calls
                     const currentToken = get().token;
-                    if (!currentToken) {
-                        console.warn('[authStore] Already logged out');
-                        return;
-                    }
-
-                    console.log('[authStore] Logging out...');
+                    if (!currentToken) return;
                     
                     authService.logout();
                     socketManager.disconnect();
                     
-                    // Clear all auth data
                     localStorage.removeItem('auth_token');
                     localStorage.removeItem('refresh_token');
                     localStorage.removeItem('user');
@@ -111,7 +112,11 @@ export const useAuthStore = create<AuthState>()(
                         error: null,
                     });
 
-                    // Navigate to login without reload
+                    // Reset profileStore
+                    import('./profileStore').then(({ useProfileStore }) => {
+                        useProfileStore.getState().reset();
+                    });
+
                     if (window.location.pathname !== '/login') {
                         window.history.pushState({}, '', '/login');
                         window.dispatchEvent(new PopStateEvent('popstate'));
@@ -128,10 +133,16 @@ export const useAuthStore = create<AuthState>()(
                 refreshUserProfile: async () => {
                     const currentUser = get().user;
                     if (!currentUser?.id) return;
-
+                    
                     try {
                         const { userService } = await import('@/services/api/userService');
-                        const updatedUser = await userService.getProfile(currentUser.id);
+                        const fullProfile = await userService.getProfile(currentUser.id);
+                        
+                        const updatedUser = {
+                            ...currentUser,
+                            ...fullProfile,
+                        };
+                        
                         set({ user: updatedUser });
                         localStorage.setItem('user', JSON.stringify(updatedUser));
                     } catch (error) {
@@ -150,10 +161,8 @@ export const useAuthStore = create<AuthState>()(
                             const user = JSON.parse(userStr);
                             set({ user, token, refreshToken });
 
-                            // Fetch fresh user data from server to get latest avatarUrl
-                            get().refreshUserProfile();
-
-                            // WebSocket will be connected by useWebSocket hook
+                            // Fetch fresh profile data in background (don't await)
+                            syncProfileStores(get().refreshUserProfile).catch(console.error);
                         } catch (error) {
                             console.error('Failed to initialize auth:', error);
                             get().logout();

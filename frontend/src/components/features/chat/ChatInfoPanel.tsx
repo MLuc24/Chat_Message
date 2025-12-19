@@ -187,8 +187,8 @@ export function ChatInfoPanel({
                             {/* Avatar */}
                             <div className="relative mb-3">
                                 <img
-                                    src={otherUser.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.username || otherUser.name)}&size=80`}
-                                    alt={otherUser.username || otherUser.name}
+                                    src={otherUser.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&size=80`}
+                                    alt={otherUser.name}
                                     className="w-20 h-20 rounded-full object-cover"
                                 />
                                 {otherUser.isOnline && (
@@ -198,7 +198,7 @@ export function ChatInfoPanel({
 
                             {/* Name */}
                             <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                                {otherUser.username}
+                                {otherUser.name}
                             </h3>
 
                             {/* Status */}

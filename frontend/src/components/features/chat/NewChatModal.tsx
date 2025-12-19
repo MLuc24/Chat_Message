@@ -173,7 +173,7 @@ export function NewChatModal({ isOpen, onClose, onConversationCreated }: NewChat
                                         />
                                         <div className="flex-1 text-left">
                                             <p className="font-medium text-gray-900">{user.name}</p>
-                                            <p className="text-sm text-gray-500">@{user.username}</p>
+                                            <p className="text-sm text-gray-500">{user.email}</p>
                                         </div>
                                         {isCreating && (
                                             <Spinner size="sm" />

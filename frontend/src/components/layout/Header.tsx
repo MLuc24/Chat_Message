@@ -1,18 +1,24 @@
 // Header Component - Top navigation bar
 
 import { useAuth } from '@/hooks/useAuth';
+import { useProfileStore } from '@/stores/profileStore';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/utils/constants';
 import { Avatar } from '@/components/common/Avatar';
 
 export function Header() {
     const { user, logout } = useAuth();
+    const { profile } = useProfileStore();
     const navigate = useNavigate();
 
     const handleLogout = () => {
         logout();
         navigate(ROUTES.LOGIN);
     };
+
+    // Use profile avatar if available (most up-to-date), fallback to user avatar
+    const avatarUrl = profile?.avatarUrl || user?.avatarUrl || user?.avatar;
+    const displayName = profile?.name || user?.name || user?.email;
 
     return (
         <header className="bg-white border-b border-gray-200 px-6">
@@ -39,12 +45,12 @@ export function Header() {
                         title="View profile"
                     >
                         <span className="text-sm font-medium text-gray-700">
-                            {user?.name || user?.email}
+                            {displayName}
                         </span>
                         <Avatar
-                            src={user?.avatarUrl || user?.avatar}
-                            alt={user?.name || 'User'}
-                            name={user?.name || user?.email || 'User'}
+                            src={avatarUrl}
+                            alt={displayName || 'User'}
+                            name={displayName || 'User'}
                             size="md"
                         />
                     </button>

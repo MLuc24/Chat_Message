@@ -63,16 +63,36 @@ export class MessageService {
   async sendMessage(conversationId: string, userId: string, sendDto: SendMessageDto) {
     await this.checkMembership(conversationId, userId);
 
+    // Log incoming message data for debugging
+    console.log('📨 Sending message:', {
+      type: sendDto.type,
+      hasText: !!sendDto.text,
+      hasMediaUrl: !!sendDto.mediaUrl,
+      mediaUrl: sendDto.mediaUrl,
+    });
+
     const message = await this.prisma.message.create({
       data: {
         conversationId,
         senderId: userId,
         type: sendDto.type,
         text: sendDto.text,
+        mediaUrl: sendDto.mediaUrl,
+        mediaPublicId: sendDto.mediaPublicId,
+        thumbnailUrl: sendDto.thumbnailUrl,
+        mediaWidth: sendDto.mediaWidth,
+        mediaHeight: sendDto.mediaHeight,
+        mediaDuration: sendDto.mediaDuration,
       },
       include: {
         statuses: true,
       },
+    });
+
+    console.log('✅ Message created:', {
+      id: message.id,
+      type: message.type,
+      mediaUrl: message.mediaUrl,
     });
 
     // Update conversation updatedAt

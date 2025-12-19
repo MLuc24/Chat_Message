@@ -37,11 +37,11 @@ class ChatService {
     }
 
     async sendMessage(conversationId: string, dto: SendMessageDto): Promise<Message> {
-        // Extract only text and type for the request body (conversationId is in URL)
-        const { text, type } = dto;
+        // Send all message data (conversationId is in URL, so exclude it from body)
+        const { conversationId: _, ...messageData } = dto;
         const { data } = await http.post<Message>(
             API_ENDPOINTS.CHAT.SEND_MESSAGE(conversationId),
-            { text, type }
+            messageData
         );
         return data;
     }

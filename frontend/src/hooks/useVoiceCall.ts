@@ -135,7 +135,6 @@ export function useVoiceCall() {
     // Handle ICE candidates
     pc.onicecandidate = (event) => {
       if (event.candidate) {
-        console.log('🧊 New ICE candidate:', event.candidate.type);
         const currentState = callStateRef.current;
         if (currentState.targetUserId) {
           socketManager.emit('voice_call_ice_candidate', {
@@ -143,17 +142,12 @@ export function useVoiceCall() {
             candidate: event.candidate.toJSON(),
           });
         }
-      } else {
-        console.log('🧊 ICE gathering complete');
       }
     };
 
     // Handle connection state changes
     pc.onconnectionstatechange = () => {
-      console.log('📞 Connection state:', pc.connectionState);
-      
       if (pc.connectionState === 'connected') {
-        console.log('✅ Call connected!');
         setCallState((prev) => ({ ...prev, isConnected: true }));
         startDurationTimer();
       } else if (
@@ -161,19 +155,8 @@ export function useVoiceCall() {
         pc.connectionState === 'disconnected' ||
         pc.connectionState === 'closed'
       ) {
-        console.log('❌ Connection failed/closed:', pc.connectionState);
         endCall();
       }
-    };
-
-    // Handle ICE connection state
-    pc.oniceconnectionstatechange = () => {
-      console.log('🧊 ICE connection state:', pc.iceConnectionState);
-    };
-
-    // Handle ICE gathering state
-    pc.onicegatheringstatechange = () => {
-      console.log('🧊 ICE gathering state:', pc.iceGatheringState);
     };
 
     peerConnectionRef.current = pc;
@@ -184,7 +167,6 @@ export function useVoiceCall() {
   const startCall = useCallback(
     async (targetUser: User, conversationId: string) => {
       try {
-        console.log('📞 Starting outgoing call to:', targetUser.name);
 
         // Initialize audio stream
         await initializeLocalStream();
@@ -208,13 +190,11 @@ export function useVoiceCall() {
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
 
-        console.log('📞 Sending offer to:', targetUser.id, targetUser.name);
         socketManager.emit('voice_call_offer', {
           targetUserId: targetUser.id,
           offer: pc.localDescription!.toJSON(),
           conversationId,
         });
-        console.log('✅ Offer sent');
 
       } catch (error) {
         console.error('❌ Failed to start call:', error);
@@ -229,12 +209,8 @@ export function useVoiceCall() {
   const answerCall = useCallback(
     async (incomingData: IncomingCallData) => {
       try {
-        console.log('📞 Answering call from:', incomingData.callerId);
-        console.log('📞 Incoming data:', incomingData);
-
-        // Prevent duplicate answers
+          // Prevent duplicate answers
         if (isAnsweringRef.current || peerConnectionRef.current) {
-          console.log('📞 Already answering, ignoring duplicate');
           return;
         }
 
@@ -255,12 +231,10 @@ export function useVoiceCall() {
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
 
-        console.log('📞 Sending answer to:', incomingData.callerId);
         socketManager.emit('voice_call_answer', {
           callerId: incomingData.callerId,
           answer: pc.localDescription!.toJSON(),
         });
-        console.log('✅ Answer sent');
 
         // Update state to show we're no longer incoming, but connecting
         // Also set targetUserId so ICE candidates can be sent
@@ -306,12 +280,9 @@ export function useVoiceCall() {
 
     // Incoming call
     const handleIncomingCall = (data: IncomingCallData) => {
-      console.log('📞 Incoming call from:', data.callerId);
-      
       // Prevent duplicate incoming calls
       const currentState = callStateRef.current;
       if (currentState.isActive) {
-        console.log('📞 Already in a call, ignoring incoming call');
         return;
       }
       
@@ -335,19 +306,14 @@ export function useVoiceCall() {
       answer: RTCSessionDescriptionInit;
       answeredBy: string;
     }) => {
-      console.log('📞 Call answered by:', data.answeredBy);
-
       if (peerConnectionRef.current) {
         try {
           await peerConnectionRef.current.setRemoteDescription(
             new RTCSessionDescription(data.answer)
           );
-          console.log('✅ Remote description (answer) set successfully');
         } catch (error) {
           console.error('❌ Failed to set remote description:', error);
         }
-      } else {
-        console.error('❌ No peer connection when answer received');
       }
     };
 
@@ -357,12 +323,10 @@ export function useVoiceCall() {
       fromUserId: string;
     }) => {
       if (peerConnectionRef.current && data.candidate) {
-        console.log('🧊 Received ICE candidate from:', data.fromUserId);
         try {
           await peerConnectionRef.current.addIceCandidate(
             new RTCIceCandidate(data.candidate)
           );
-          console.log('✅ ICE candidate added successfully');
         } catch (error) {
           console.error('❌ Failed to add ICE candidate:', error);
         }

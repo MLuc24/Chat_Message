@@ -48,10 +48,11 @@ export function ChatInput({ onSend, onSendMedia, disabled }: ChatInputProps) {
             setUploadProgress(0);
 
             const uploadType = type === 'image' ? 'chat_image' : 'chat_video';
+            
             const result = await uploadService.upload(
                 file,
                 uploadType,
-                '/api/chat',
+                '/chat',
                 (progress: UploadProgress) => {
                     setUploadProgress(progress.percentage);
                 }

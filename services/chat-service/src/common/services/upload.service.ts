@@ -53,15 +53,14 @@ export class UploadService {
       params.public_id = dto.publicId;
     }
 
-    // Add transformation for images/videos
-    if (uploadOptions.transformation) {
-      params.transformation = JSON.stringify(uploadOptions.transformation);
-    }
-
     // Add resource_type for videos
     if (dto.uploadType === 'chat_video') {
       params.resource_type = 'video';
     }
+    
+    // Note: We don't include transformation in the signature params
+    // Transformations will be applied by Cloudinary after upload based on folder settings
+    // or can be applied when retrieving the URL
 
     // Generate signature
     const signature = this.cloudinary.utils.api_sign_request(
@@ -80,7 +79,6 @@ export class UploadService {
       folder: uploadOptions.folder,
       uploadUrl: `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
       publicId: dto.publicId,
-      transformation: params.transformation,
     };
   }
 

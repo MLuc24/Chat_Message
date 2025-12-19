@@ -36,7 +36,7 @@ export const ChatHeader = memo(function ChatHeader({
 }: ChatHeaderProps) {
     // Show placeholder if no recipient
     const displayName = recipient?.name || 'User';
-    const displayAvatar = recipient?.avatar;
+    const displayAvatar = recipient?.avatarUrl || recipient?.avatar;
     const isOnline = recipient?.isOnline ?? false;
 
     return (

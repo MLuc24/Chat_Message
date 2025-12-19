@@ -46,12 +46,56 @@ export const MessageItem = memo(function MessageItem({
             <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-[65%]`}>
                 {/* Message bubble */}
                 <div
-                    className={`rounded-2xl px-4 py-2.5 ${isOwn
-                        ? 'bg-blue-600 text-white rounded-br-sm'
-                        : 'bg-gray-200 text-gray-900 rounded-bl-sm'
+                    className={`rounded-2xl overflow-hidden ${message.type === 'text'
+                        ? 'px-4 py-2.5'
+                        : 'p-1'
+                        } ${message.type === 'text' 
+                            ? isOwn
+                                ? 'bg-blue-600 text-white rounded-br-sm'
+                                : 'bg-gray-200 text-gray-900 rounded-bl-sm'
+                            : 'bg-transparent'
                         }`}
                 >
-                    <p className="text-sm break-words whitespace-pre-wrap leading-relaxed">{message.text}</p>
+                    {/* Text message */}
+                    {message.type === 'text' && message.text && (
+                        <p className="text-sm break-words whitespace-pre-wrap leading-relaxed">{message.text}</p>
+                    )}
+
+                    {/* Image message */}
+                    {message.type === 'image' && (
+                        <>
+                            {message.mediaUrl ? (
+                                <img
+                                    src={message.mediaUrl}
+                                    alt="Shared image"
+                                    className="w-64 h-64 object-cover cursor-pointer rounded-lg"
+                                    onClick={() => window.open(message.mediaUrl, '_blank')}
+                                    onError={(e) => {
+                                        console.error('Failed to load image:', message.mediaUrl);
+                                        e.currentTarget.style.display = 'none';
+                                    }}
+                                />
+                            ) : (
+                                <div className="px-4 py-2 text-sm text-gray-500">Image not available</div>
+                            )}
+                        </>
+                    )}
+
+                    {/* Video message */}
+                    {message.type === 'video' && (
+                        <>
+                            {message.mediaUrl ? (
+                                <video
+                                    src={message.mediaUrl}
+                                    controls
+                                    className="w-80 h-auto rounded-lg"
+                                    poster={message.thumbnailUrl}
+                                />
+                            ) : (
+                                <div className="px-4 py-2 text-sm text-gray-500">Video not available</div>
+                            )}
+                        </>
+                    )}
                 </div>
 
                 {/* Timestamp - only show on last message in group */}

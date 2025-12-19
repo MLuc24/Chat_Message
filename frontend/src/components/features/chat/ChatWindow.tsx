@@ -11,9 +11,10 @@ import type { User } from '../../../types/user.types';
 interface ChatWindowProps {
     conversationId: string | null;
     onStartVoiceCall?: (targetUser: User, conversationId: string) => void;
+    onStartVideoCall?: (targetUser: User, conversationId: string) => void;
 }
 
-export function ChatWindow({ conversationId, onStartVoiceCall }: ChatWindowProps) {
+export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall }: ChatWindowProps) {
     const { currentMessages, sendMessage, isLoading, conversations } = useChat(conversationId || undefined);
 
     // Find current conversation to get recipient info
@@ -34,6 +35,13 @@ export function ChatWindow({ conversationId, onStartVoiceCall }: ChatWindowProps
     const handleVoiceCall = () => {
         if (recipient && conversationId && onStartVoiceCall) {
             onStartVoiceCall(recipient, conversationId);
+        }
+    };
+
+    // Handle video call
+    const handleVideoCall = () => {
+        if (recipient && conversationId && onStartVideoCall) {
+            onStartVideoCall(recipient, conversationId);
         }
     };
 
@@ -117,7 +125,7 @@ export function ChatWindow({ conversationId, onStartVoiceCall }: ChatWindowProps
             <ChatHeader
                 recipient={recipient}
                 onVoiceCall={handleVoiceCall}
-                onVideoCall={() => console.log('Video call')}
+                onVideoCall={handleVideoCall}
                 onViewInfo={() => console.log('View info')}
             />
 

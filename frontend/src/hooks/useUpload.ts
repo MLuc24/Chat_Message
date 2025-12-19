@@ -1,14 +1,3 @@
-/**
- * useUpload Hook
- * Custom hook for handling file uploads with progress tracking
- * 
- * Features:
- * - Progress tracking
- * - Error handling
- * - Preview generation
- * - Upload cancellation (future enhancement)
- */
-
 import { useState, useCallback } from 'react';
 import { uploadService, type UploadResult, type UploadProgress } from '@/services/api/uploadService';
 

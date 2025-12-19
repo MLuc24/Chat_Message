@@ -5,28 +5,60 @@ import { MainLayout } from '../components/layout/MainLayout';
 import { ConversationList } from '../components/features/chat/ConversationList';
 import { ChatWindow } from '../components/features/chat/ChatWindow';
 import { VoiceCallModal } from '../components/features/chat/VoiceCallModal';
+import { VideoCallModal } from '../components/features/chat/VideoCallModal';
 import { useVoiceCall } from '../hooks/useVoiceCall';
+import { useVideoCall } from '../hooks/useVideoCall';
 import { useChat } from '../hooks/useChat';
 
 export function ChatPage() {
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
     const { callState, startCall, answerCall, rejectCall, endCall } = useVoiceCall();
+    const { 
+        callState: videoCallState, 
+        startCall: startVideoCall, 
+        answerCall: answerVideoCall, 
+        rejectCall: rejectVideoCall, 
+        endCall: endVideoCall,
+        toggleCamera,
+        toggleMicrophone,
+        toggleScreenShare,
+        localStream,
+        remoteStream,
+    } = useVideoCall();
     const { conversations } = useChat(activeConversationId || undefined);
 
-    // Get the other user in the call
+    // Get the other user in the voice call
     const getCallUser = () => {
         if (callState.isIncoming && callState.callerId) {
             // For incoming calls, find caller in conversations
             const conversation = conversations?.find((c) =>
-                c.participants.some((p) => p.id === callState.callerId)
+                c.participants?.some((p) => p.id === callState.callerId)
             );
-            return conversation?.participants.find((p) => p.id === callState.callerId);
+            return conversation?.participants?.find((p) => p.id === callState.callerId);
         } else if (callState.targetUserId) {
             // For outgoing calls, find target user
             const conversation = conversations?.find((c) =>
-                c.participants.some((p) => p.id === callState.targetUserId)
+                c.participants?.some((p) => p.id === callState.targetUserId)
             );
-            return conversation?.participants.find((p) => p.id === callState.targetUserId);
+            return conversation?.participants?.find((p) => p.id === callState.targetUserId);
+        }
+        return undefined;
+    };
+
+    // Get the other user in the video call
+    const getVideoCallUser = () => {
+        if (videoCallState.isIncoming && videoCallState.callerId) {
+            // For incoming calls, find caller in conversations
+            const conversation = conversations?.find((c) =>
+                c.participants?.some((p) => p.id === videoCallState.callerId)
+            );
+            return conversation?.participants?.find((p) => p.id === videoCallState.callerId);
+        } else if (videoCallState.targetUserId) {
+            // For outgoing calls, find target user
+            const conversation = conversations?.find((c) =>
+                c.participants?.some((p) => p.id === videoCallState.targetUserId)
+            );
+            return conversation?.participants?.find((p) => p.id === videoCallState.targetUserId);
         }
         return undefined;
     };
@@ -47,6 +79,7 @@ export function ChatPage() {
                     <ChatWindow
                         conversationId={activeConversationId}
                         onStartVoiceCall={startCall}
+                        onStartVideoCall={startVideoCall}
                     />
                 </div>
             </div>
@@ -61,6 +94,30 @@ export function ChatPage() {
                 onAnswer={answerCall}
                 onReject={rejectCall}
                 onEnd={endCall}
+            />
+
+            {/* Video Call Modal */}
+            <VideoCallModal
+                isOpen={videoCallState.isActive}
+                callState={videoCallState}
+                otherUser={getVideoCallUser()}
+                localStream={localStream}
+                remoteStream={remoteStream}
+                onAnswer={() => {
+                    const incomingData = (window as any).__incomingVideoCallData;
+                    if (incomingData) {
+                        answerVideoCall(incomingData);
+                    }
+                }}
+                onReject={() => {
+                    if (videoCallState.callerId) {
+                        rejectVideoCall(videoCallState.callerId);
+                    }
+                }}
+                onEnd={endVideoCall}
+                onToggleCamera={toggleCamera}
+                onToggleMicrophone={toggleMicrophone}
+                onToggleScreenShare={toggleScreenShare}
             />
         </MainLayout>
     );

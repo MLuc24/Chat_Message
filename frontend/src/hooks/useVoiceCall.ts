@@ -25,6 +25,7 @@ export function useVoiceCall() {
     isOutgoing: false,
     isConnected: false,
     duration: 0,
+    callType: 'voice',
   });
 
   // Keep callStateRef in sync
@@ -108,6 +109,7 @@ export function useVoiceCall() {
       isOutgoing: false,
       isConnected: false,
       duration: 0,
+      callType: 'voice',
     });
   }, []);
 
@@ -181,6 +183,7 @@ export function useVoiceCall() {
           targetUserName: targetUser.name,
           conversationId,
           duration: 0,
+          callType: 'voice',
         });
 
         // Create peer connection
@@ -238,7 +241,7 @@ export function useVoiceCall() {
 
         // Update state to show we're no longer incoming, but connecting
         // Also set targetUserId so ICE candidates can be sent
-        const newState = {
+        const newState: VoiceCallState = {
           isActive: true,
           isIncoming: false,
           isOutgoing: false,
@@ -247,6 +250,7 @@ export function useVoiceCall() {
           targetUserId: incomingData.callerId,
           conversationId: incomingData.conversationId,
           duration: 0,
+          callType: 'voice',
         };
         setCallState(newState);
         callStateRef.current = newState;
@@ -295,6 +299,7 @@ export function useVoiceCall() {
         callerName: data.callerEmail,
         conversationId: data.conversationId,
         duration: 0,
+        callType: 'voice',
       });
 
       // Store offer for later use when user answers

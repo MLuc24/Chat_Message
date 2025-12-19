@@ -42,7 +42,7 @@ class SocketManager {
             this.socket?.emit('authenticate', { token });
         });
 
-        this.socket.on('authenticated', (data) => {
+        this.socket.on('authenticated', (_data) => {
             // Authenticated successfully
         });
 
@@ -51,7 +51,7 @@ class SocketManager {
             this.disconnect();
         });
 
-        this.socket.on('disconnect', (reason) => {
+        this.socket.on('disconnect', (_reason) => {
             this.isConnecting = false;
         });
 

@@ -107,7 +107,7 @@ export const useProfileStore = create<ProfileState>()(
       uploadAvatar: async (file: File) => {
         set({ isUploading: true, error: null, successMessage: null });
         try {
-          const { avatarUrl } = await profileService.uploadAvatar(file);
+          await profileService.uploadAvatar(file);
           
           // Fetch fresh profile data from server to ensure consistency
           const updatedProfile = await profileService.getCurrentProfile();

@@ -32,3 +32,29 @@ export interface AuthResponse {
         refreshToken: string;
     };
 }
+
+// Profile update types
+export interface UpdateProfileDto {
+    name?: string;
+    bio?: string;
+    email?: string;
+}
+
+export interface ChangePasswordDto {
+    currentPassword: string;
+    newPassword: string;
+}
+
+export interface ProfileResponse {
+    id: string;
+    email: string;
+    name: string;
+    bio?: string;
+    avatarUrl?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface AvatarUploadResponse {
+    avatarUrl: string;
+}

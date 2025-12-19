@@ -97,8 +97,8 @@ export class MessageService {
       throw new BadRequestException('No file provided');
     }
 
-    // Upload file to R2
-    const { url, size } = await this.storage.uploadFile(file, 'messages');
+    // Upload file to Cloudinary
+    const { url, size, publicId } = await this.storage.uploadFile(file, 'messages');
 
     // Determine message type based on mime type
     let messageType = 'file';

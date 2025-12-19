@@ -1,7 +1,18 @@
 // Utility functions for formatting
 
-export function formatTimestamp(date: string | Date): string {
+export function formatTimestamp(date: string | Date | null | undefined): string {
+    // Handle null/undefined
+    if (!date) {
+        return 'N/A';
+    }
+    
     const messageDate = typeof date === 'string' ? new Date(date) : date;
+    
+    // Check if date is valid
+    if (isNaN(messageDate.getTime())) {
+        return 'N/A';
+    }
+    
     const now = new Date();
     const diffMs = now.getTime() - messageDate.getTime();
     const diffMins = Math.floor(diffMs / 60000);
@@ -19,8 +30,19 @@ export function formatTimestamp(date: string | Date): string {
     }).format(messageDate);
 }
 
-export function formatDate(date: string | Date): string {
+export function formatDate(date: string | Date | null | undefined): string {
+    // Handle null/undefined
+    if (!date) {
+        return 'N/A';
+    }
+    
     const d = typeof date === 'string' ? new Date(date) : date;
+    
+    // Check if date is valid
+    if (isNaN(d.getTime())) {
+        return 'N/A';
+    }
+    
     return new Intl.DateTimeFormat('en-US', {
         year: 'numeric',
         month: 'long',
@@ -30,8 +52,19 @@ export function formatDate(date: string | Date): string {
     }).format(d);
 }
 
-export function formatTime(date: string | Date): string {
+export function formatTime(date: string | Date | null | undefined): string {
+    // Handle null/undefined
+    if (!date) {
+        return 'N/A';
+    }
+    
     const d = typeof date === 'string' ? new Date(date) : date;
+    
+    // Check if date is valid
+    if (isNaN(d.getTime())) {
+        return 'N/A';
+    }
+    
     return new Intl.DateTimeFormat('en-US', {
         hour: '2-digit',
         minute: '2-digit',

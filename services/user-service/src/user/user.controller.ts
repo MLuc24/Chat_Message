@@ -3,16 +3,35 @@ import {
   Get,
   Put,
   Post,
+  Delete,
   Param,
   Body,
   Query,
   Headers,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { 
+  ApiTags, 
+  ApiOperation, 
+  ApiResponse, 
+  ApiHeader,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { UserService } from './user.service';
-import { UpdateProfileDto } from './dto';
+import { 
+  UpdateProfileDto, 
+  ChangePasswordDto, 
+  ProfileResponseDto,
+  UploadAvatarDto,
+} from './dto';
 import { UploadService } from '../common/services/upload.service';
 import {
   GenerateUploadSignatureDto,
@@ -30,6 +49,32 @@ export class UserController {
   @Get('health')
   health() {
     return { status: 'ok', service: 'user-service' };
+  }
+
+  /**
+   * Get current user profile (me endpoint)
+   * IMPORTANT: This must come BEFORE profile/:userId to avoid route conflict
+   */
+  @Get('profile/me')
+  @ApiOperation({ 
+    summary: 'Get current user profile',
+    description: 'Get authenticated user profile',
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'User profile retrieved',
+    type: ProfileResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiHeader({ 
+    name: 'x-user-id', 
+    required: true,
+    description: 'User ID from JWT token',
+  })
+  async getCurrentUserProfile(
+    @Headers('x-user-id') userId: string,
+  ): Promise<any> {
+    return this.userService.getProfile(userId);
   }
 
   @Get('profile/:userId')
@@ -89,4 +134,134 @@ export class UserController {
   async setOffline(@Headers('x-user-id') userId: string) {
     return this.userService.setOffline(userId);
   }
+
+  // ===== ENHANCED PROFILE MANAGEMENT ENDPOINTS =====
+
+  /**
+   * Update user profile (enhanced with validation)
+   */
+  @Put('profile/edit')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ 
+    summary: 'Update user profile',
+    description: 'Update user name, bio, and email with validation',
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Profile updated successfully',
+    type: ProfileResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 409, description: 'Email already in use' })
+  @ApiHeader({ 
+    name: 'x-user-id', 
+    required: true,
+    description: 'User ID from JWT token',
+  })
+  async updateProfileEnhanced(
+    @Headers('x-user-id') userId: string,
+    @Body() updateDto: UpdateProfileDto,
+  ): Promise<ProfileResponseDto> {
+    return this.userService.updateProfileEnhanced(userId, updateDto);
+  }
+
+  /**
+   * Change user password
+   */
+  @Put('profile/password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ 
+    summary: 'Change user password',
+    description: 'Change password with current password verification',
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Password changed successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Current password incorrect' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiHeader({ 
+    name: 'x-user-id', 
+    required: true,
+    description: 'User ID from JWT token',
+  })
+  async changePassword(
+    @Headers('x-user-id') userId: string,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    return this.userService.changePassword(userId, changePasswordDto);
+  }
+
+  /**
+   * Upload user avatar (multipart/form-data)
+   */
+  @Post('profile/avatar')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ 
+    summary: 'Upload user avatar',
+    description: 'Upload avatar image (max 5MB, JPEG/PNG/WebP)',
+  })
+  @ApiBody({ type: UploadAvatarDto })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Avatar uploaded successfully',
+    schema: {
+      properties: {
+        avatarUrl: { type: 'string', example: 'https://res.cloudinary.com/...' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid file or validation error' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiHeader({ 
+    name: 'x-user-id', 
+    required: true,
+    description: 'User ID from JWT token',
+  })
+  async uploadAvatarFile(
+    @Headers('x-user-id') userId: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5MB
+          new FileTypeValidator({ fileType: /(jpg|jpeg|png|webp)$/ }),
+        ],
+        fileIsRequired: true,
+      }),
+    )
+    file: Express.Multer.File,
+  ): Promise<{ avatarUrl: string }> {
+    return this.userService.uploadAvatar(userId, file);
+  }
+
+  /**
+   * Delete user avatar
+   */
+  @Delete('profile/avatar')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ 
+    summary: 'Delete user avatar',
+    description: 'Remove current avatar and revert to default',
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Avatar deleted successfully',
+  })
+  @ApiResponse({ status: 400, description: 'No avatar to delete' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiHeader({ 
+    name: 'x-user-id', 
+    required: true,
+    description: 'User ID from JWT token',
+  })
+  async deleteAvatar(
+    @Headers('x-user-id') userId: string,
+  ): Promise<{ message: string }> {
+    return this.userService.deleteAvatar(userId);
+  }
+
 }

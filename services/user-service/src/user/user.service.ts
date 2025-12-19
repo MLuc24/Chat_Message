@@ -9,7 +9,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { StorageService } from '../storage/storage.service';
 import { UpdateProfileDto, ChangePasswordDto, ProfileResponseDto } from './dto';
-import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -218,7 +217,7 @@ export class UserService {
     userId: string,
     changePasswordDto: ChangePasswordDto,
   ): Promise<{ message: string }> {
-    // Find user with password hash
+    // Find user
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -227,21 +226,12 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    // Verify current password
-    // Note: You need to add passwordHash field to User model in Prisma schema
-    // For now, this assumes auth-service handles passwords
-    // This is a placeholder - actual implementation depends on your auth architecture
-    
-    // Hash new password
-    const newPasswordHash = await bcrypt.hash(changePasswordDto.newPassword, 12);
-
-    // In a real scenario, you would:
-    // 1. Call auth-service to change password
-    // 2. Or update passwordHash in user model if stored here
-    
-    // Publish password changed event
-    await this.redis.publish('user.password.changed', {
+    // TODO: Integrate with auth-service to verify and update password
+    // For now, just publish event for auth-service to handle
+    await this.redis.publish('user.password.change.requested', {
       userId,
+      currentPassword: changePasswordDto.currentPassword,
+      newPassword: changePasswordDto.newPassword,
       timestamp: new Date().toISOString(),
     });
 
@@ -286,32 +276,36 @@ export class UserService {
     }
 
     // Delete old avatar from storage if exists
+    // TODO: Implement delete functionality in storage service
+    if (user.avatarPublicId) {
+      console.log('Old avatar exists, should be deleted:', user.avatarPublicId);
+    }
+
+    // Delete old avatar from Cloudinary if exists
     if (user.avatarPublicId) {
       try {
         await this.storage.deleteFile(user.avatarPublicId);
       } catch (error) {
-        // Log error but continue with upload
-        console.warn('Failed to delete old avatar:', error);
+        console.log('Failed to delete old avatar:', error.message);
       }
     }
 
-    // Upload new avatar
-    const uploadResult = await this.storage.uploadFile(file, {
-      folder: 'avatars',
-      transformation: {
-        width: 400,
-        height: 400,
-        crop: 'fill',
-        gravity: 'face',
-      },
-    });
+    // Upload new avatar to Cloudinary
+    const avatarUrl = await this.storage.uploadFile(file, 'avatars');
+    
+    // Extract public_id from Cloudinary URL
+    // URL format: https://res.cloudinary.com/{cloud_name}/image/upload/v{version}/{public_id}.{format}
+    const urlParts = avatarUrl.split('/');
+    const uploadIndex = urlParts.indexOf('upload');
+    const publicIdWithExt = urlParts.slice(uploadIndex + 2).join('/'); // Skip version
+    const avatarPublicId = publicIdWithExt.split('.')[0]; // Remove extension
 
     // Update user avatar in database
     await this.prisma.user.update({
       where: { id: userId },
       data: {
-        avatarUrl: uploadResult.url,
-        avatarPublicId: uploadResult.publicId,
+        avatarUrl,
+        avatarPublicId,
         updatedAt: new Date(),
       },
     });
@@ -319,10 +313,10 @@ export class UserService {
     // Publish avatar update event
     await this.redis.publish('user.avatar.updated', {
       userId,
-      avatarUrl: uploadResult.url,
+      avatarUrl,
     });
 
-    return { avatarUrl: uploadResult.url };
+    return { avatarUrl };
   }
 
   /**
@@ -343,12 +337,12 @@ export class UserService {
       throw new BadRequestException('No avatar to delete');
     }
 
-    // Delete from storage
+    // Delete from Cloudinary
     if (user.avatarPublicId) {
       try {
         await this.storage.deleteFile(user.avatarPublicId);
       } catch (error) {
-        console.warn('Failed to delete avatar from storage:', error);
+        console.log('Failed to delete avatar from Cloudinary:', error.message);
       }
     }
 

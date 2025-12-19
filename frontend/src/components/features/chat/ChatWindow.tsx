@@ -44,6 +44,37 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
         }
     };
 
+    const handleSendMedia = async (
+        mediaUrl: string,
+        type: 'image' | 'video',
+        metadata?: {
+            publicId: string;
+            width?: number;
+            height?: number;
+            duration?: number;
+            thumbnailUrl?: string;
+        }
+    ) => {
+        if (!conversationId) return;
+
+        const dto: SendMessageDto = {
+            conversationId,
+            type,
+            mediaUrl,
+            mediaPublicId: metadata?.publicId,
+            mediaWidth: metadata?.width,
+            mediaHeight: metadata?.height,
+            mediaDuration: metadata?.duration,
+            thumbnailUrl: metadata?.thumbnailUrl,
+        };
+
+        try {
+            await sendMessage(dto);
+        } catch (error) {
+            console.error('Failed to send media message:', error);
+        }
+    };
+
     // Show empty state if no conversation selected
     if (!conversationId) {
         return (
@@ -89,7 +120,11 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
             />
 
             {/* Input */}
-            <ChatInput onSend={handleSendMessage} disabled={isLoading} />
+            <ChatInput
+                onSend={handleSendMessage}
+                onSendMedia={handleSendMedia}
+                disabled={isLoading}
+            />
         </div>
     );
 }

@@ -43,20 +43,24 @@ export const Modal = memo(function Modal({
 
         document.addEventListener('keydown', handleEscape);
 
-        // Focus trap
+        // Focus trap - only focus if no element is already focused
         const focusableElements = modalRef.current?.querySelectorAll(
             'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
 
-        if (focusableElements && focusableElements.length > 0) {
-            (focusableElements[0] as HTMLElement).focus();
-        }
+        // Small delay to allow React to render and set autoFocus
+        const focusTimeout = setTimeout(() => {
+            if (focusableElements && focusableElements.length > 0 && !document.activeElement?.matches('input, textarea, select')) {
+                (focusableElements[0] as HTMLElement).focus();
+            }
+        }, 0);
 
         // Prevent body scroll
         const originalOverflow = document.body.style.overflow;
         document.body.style.overflow = 'hidden';
 
         return () => {
+            clearTimeout(focusTimeout);
             document.removeEventListener('keydown', handleEscape);
             document.body.style.overflow = originalOverflow;
         };

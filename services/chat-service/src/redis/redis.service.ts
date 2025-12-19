@@ -44,6 +44,40 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     );
   }
 
+  // Group events
+  async publishMemberAdded(
+    conversationId: string,
+    memberIds: string[],
+    data: { userId: string; addedBy: string; role: string },
+  ): Promise<void> {
+    await this.publisher.publish(
+      `conversation:${conversationId}`,
+      JSON.stringify({ type: 'member_added', data, memberIds }),
+    );
+  }
+
+  async publishMemberRemoved(
+    conversationId: string,
+    memberIds: string[],
+    data: { userId: string; removedBy: string },
+  ): Promise<void> {
+    await this.publisher.publish(
+      `conversation:${conversationId}`,
+      JSON.stringify({ type: 'member_removed', data, memberIds }),
+    );
+  }
+
+  async publishGroupUpdated(
+    conversationId: string,
+    memberIds: string[],
+    data: { name?: string; avatarUrl?: string; updatedBy: string },
+  ): Promise<void> {
+    await this.publisher.publish(
+      `conversation:${conversationId}`,
+      JSON.stringify({ type: 'group_updated', data, memberIds }),
+    );
+  }
+
   getClient(): Redis {
     return this.client;
   }

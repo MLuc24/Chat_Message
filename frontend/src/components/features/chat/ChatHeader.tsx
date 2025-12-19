@@ -2,12 +2,16 @@ import { memo } from 'react';
 import { Avatar } from '../../common/Avatar';
 import { Dropdown, DropdownItem, DropdownDivider } from '../../common/Dropdown';
 import type { User } from '../../../types/user.types';
+import type { Conversation } from '../../../types/chat.types';
 
 interface ChatHeaderProps {
-    recipient?: User;
+    conversation?: Conversation;
+    recipient?: User; // For direct chats
     onVoiceCall?: () => void;
     onVideoCall?: () => void;
     onViewInfo?: () => void;
+    onViewMembers?: () => void; // For group chats
+    onLeaveGroup?: () => void; // For group chats
 }
 
 function getLastSeenText(lastSeen?: Date | string | null): string {
@@ -29,42 +33,89 @@ function getLastSeenText(lastSeen?: Date | string | null): string {
 }
 
 export const ChatHeader = memo(function ChatHeader({
+    conversation,
     recipient,
     onVoiceCall,
     onVideoCall,
     onViewInfo,
+    onViewMembers,
+    onLeaveGroup,
 }: ChatHeaderProps) {
-    // Show placeholder if no recipient
-    const displayName = recipient?.name || 'User';
-    const displayAvatar = recipient?.avatarUrl;
-    const isOnline = recipient?.isOnline ?? false;
+    const isGroup = conversation?.type === 'group';
+    
+    // For group: use group name and avatar
+    // For direct: use recipient info
+    const displayName = isGroup 
+        ? (conversation?.name || 'Nhóm chat')
+        : (recipient?.name || 'User');
+    
+    const displayAvatar = isGroup 
+        ? conversation?.avatarUrl 
+        : recipient?.avatarUrl;
+    
+    const isOnline = !isGroup && (recipient?.isOnline ?? false);
+    
+    // Calculate member count for groups
+    const memberCount = isGroup ? (conversation?.members?.length || 0) : 0;
+    
+    // Get online count for group (if participants available)
+    const onlineCount = isGroup 
+        ? (conversation?.participants?.filter(p => p.isOnline)?.length || 0)
+        : 0;
 
     return (
         <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shadow-sm">
-            {/* Recipient Info */}
+            {/* Chat Info */}
             <div className="flex items-center gap-3">
-                <Avatar
-                    src={displayAvatar}
-                    alt={displayName}
-                    name={displayName}
-                    size="md"
-                    status={isOnline ? 'online' : undefined}
-                />
+                {isGroup ? (
+                    // Group Avatar (stacked avatars or default group icon)
+                    <div className="relative">
+                        {displayAvatar ? (
+                            <Avatar
+                                src={displayAvatar}
+                                alt={displayName}
+                                name={displayName}
+                                size="md"
+                            />
+                        ) : (
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <Avatar
+                        src={displayAvatar}
+                        alt={displayName}
+                        name={displayName}
+                        size="md"
+                        status={isOnline ? 'online' : undefined}
+                    />
+                )}
 
                 <div>
                     <h2 className="font-semibold text-base text-gray-900">
                         {displayName}
                     </h2>
-                    <p className={`text-sm ${isOnline ? 'text-green-600' : 'text-gray-500'}`}>
-                        {isOnline ? 'Đang hoạt động' : getLastSeenText(recipient?.lastSeen)}
-                    </p>
+                    {isGroup ? (
+                        <p className="text-sm text-gray-500">
+                            {memberCount} thành viên
+                            {onlineCount > 0 && ` • ${onlineCount} đang hoạt động`}
+                        </p>
+                    ) : (
+                        <p className={`text-sm ${isOnline ? 'text-green-600' : 'text-gray-500'}`}>
+                            {isOnline ? 'Đang hoạt động' : getLastSeenText(recipient?.lastSeen)}
+                        </p>
+                    )}
                 </div>
             </div>
 
             {/* Action Buttons */}
             <div className="flex items-center gap-1">
-                {/* Voice Call */}
-                {onVoiceCall && (
+                {/* Voice Call - only for direct chats */}
+                {!isGroup && onVoiceCall && (
                     <button
                         onClick={onVoiceCall}
                         className="p-2.5 text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
@@ -81,8 +132,8 @@ export const ChatHeader = memo(function ChatHeader({
                     </button>
                 )}
 
-                {/* Video Call */}
-                {onVideoCall && (
+                {/* Video Call - only for direct chats */}
+                {!isGroup && onVideoCall && (
                     <button
                         onClick={onVideoCall}
                         className="p-2.5 text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
@@ -95,6 +146,19 @@ export const ChatHeader = memo(function ChatHeader({
                                 strokeWidth={2}
                                 d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
                             />
+                        </svg>
+                    </button>
+                )}
+
+                {/* View Members - for group chats */}
+                {isGroup && onViewMembers && (
+                    <button
+                        onClick={onViewMembers}
+                        className="p-2.5 text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
+                        aria-label="View members"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
                     </button>
                 )}
@@ -126,10 +190,25 @@ export const ChatHeader = memo(function ChatHeader({
                             }
                             onClick={onViewInfo}
                         >
-                            View Info
+                            {isGroup ? 'Thông tin nhóm' : 'Xem thông tin'}
                         </DropdownItem>
                     )}
+                    
+                    {isGroup && onViewMembers && (
+                        <DropdownItem
+                            icon={
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            }
+                            onClick={onViewMembers}
+                        >
+                            Xem thành viên
+                        </DropdownItem>
+                    )}
+                    
                     <DropdownDivider />
+                    
                     <DropdownItem
                         icon={
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,23 +221,40 @@ export const ChatHeader = memo(function ChatHeader({
                             </svg>
                         }
                     >
-                        Mute Notifications
+                        Tắt thông báo
                     </DropdownItem>
-                    <DropdownItem
-                        variant="danger"
-                        icon={
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                />
-                            </svg>
-                        }
-                    >
-                        Delete Conversation
-                    </DropdownItem>
+                    
+                    {isGroup && onLeaveGroup && (
+                        <DropdownItem
+                            variant="danger"
+                            icon={
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                            }
+                            onClick={onLeaveGroup}
+                        >
+                            Rời nhóm
+                        </DropdownItem>
+                    )}
+                    
+                    {!isGroup && (
+                        <DropdownItem
+                            variant="danger"
+                            icon={
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
+                                </svg>
+                            }
+                        >
+                            Xóa đoạn chat
+                        </DropdownItem>
+                    )}
                 </Dropdown>
             </div>
         </div>

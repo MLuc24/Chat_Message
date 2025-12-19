@@ -31,6 +31,7 @@ export interface Message {
 export interface ConversationMember {
     userId: string;
     role: 'admin' | 'member';
+    joinedAt?: string;
 }
 
 export interface Conversation {
@@ -65,4 +66,35 @@ export interface CreateConversationDto {
     type: 'direct' | 'group';
     participantIds: string[];
     name?: string;
+}
+
+// Group management DTOs
+export interface UpdateGroupDto {
+    name?: string;
+    avatarUrl?: string;
+}
+
+export interface AddMemberDto {
+    userId: string;
+}
+
+// Group WebSocket event payloads
+export interface MemberAddedEvent {
+    conversationId: string;
+    userId: string;
+    addedBy: string;
+    role: 'admin' | 'member';
+}
+
+export interface MemberRemovedEvent {
+    conversationId: string;
+    userId: string;
+    removedBy: string;
+}
+
+export interface GroupUpdatedEvent {
+    conversationId: string;
+    name?: string;
+    avatarUrl?: string;
+    updatedBy: string;
 }

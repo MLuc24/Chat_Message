@@ -20,6 +20,13 @@ class UserService {
         // Backend returns { users: [...] }
         return data.users || [];
     }
+
+    async getUsersByIds(userIds: string[]): Promise<User[]> {
+        if (userIds.length === 0) return [];
+        
+        const { data } = await http.post<User[]>('/users/batch', { userIds });
+        return data;
+    }
 }
 
 export const userService = new UserService();

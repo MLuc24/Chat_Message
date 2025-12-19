@@ -1,12 +1,22 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
 
+// Handler types for different event types
+type MessageHandler = (conversationId: string, message: any, memberIds: string[]) => void;
+type GroupEventHandler = (event: {
+  type: 'member_added' | 'member_removed' | 'group_updated';
+  conversationId: string;
+  data: any;
+  memberIds: string[];
+}) => void;
+
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
   private client: Redis;
   private publisher: Redis;
   private subscriber: Redis;
-  private messageHandler: ((conversationId: string, message: any, memberIds: string[]) => void) | null = null;
+  private messageHandler: MessageHandler | null = null;
+  private groupEventHandler: GroupEventHandler | null = null;
 
   async onModuleInit() {
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
@@ -33,6 +43,16 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         if (data.type === 'new_message' && this.messageHandler) {
           // Pass memberIds to handler for direct delivery to all participants
           this.messageHandler(conversationId, data.data, data.memberIds || []);
+        }
+        
+        // Handle group events (member_added, member_removed, group_updated)
+        if (['member_added', 'member_removed', 'group_updated'].includes(data.type) && this.groupEventHandler) {
+          this.groupEventHandler({
+            type: data.type,
+            conversationId,
+            data: data.data,
+            memberIds: data.memberIds || [],
+          });
         }
       } catch (error) {
         console.error('❌ Error processing Redis message:', error);
@@ -86,5 +106,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   setMessageHandler(handler: (conversationId: string, message: any, memberIds: string[]) => void): void {
     this.messageHandler = handler;
+  }
+
+  setGroupEventHandler(handler: GroupEventHandler): void {
+    this.groupEventHandler = handler;
   }
 }

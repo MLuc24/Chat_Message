@@ -45,6 +45,11 @@ export const WS_EVENTS = {
     USER_TYPING: 'user_typing',
     USER_ONLINE: 'user_online',
     USER_OFFLINE: 'user_offline',
+    
+    // Group events (Server -> Client)
+    MEMBER_ADDED: 'member_added',
+    MEMBER_REMOVED: 'member_removed',
+    GROUP_UPDATED: 'group_updated',
 } as const;
 
 export const STORAGE_KEYS = {

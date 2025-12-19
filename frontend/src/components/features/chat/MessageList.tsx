@@ -7,12 +7,13 @@ import { EmptyState } from '../../common/EmptyState';
 import { MediaModal } from '../../common/MediaModal';
 import { useAuth } from '../../../hooks/useAuth';
 import { useMediaModal } from '../../../hooks/useMediaModal';
-import type { Message } from '../../../types/chat.types';
+import type { Message, Conversation } from '../../../types/chat.types';
 import type { User } from '../../../types/user.types';
 
 interface MessageListProps {
     messages: Message[];
-    otherUser?: User;
+    conversation?: Conversation;
+    otherUser?: User; // deprecated, for backward compatibility
     isTyping?: boolean;
 }
 
@@ -46,6 +47,7 @@ function shouldShowDateSeparator(currentMsg: Message, prevMsg?: Message): boolea
 
 export const MessageList = memo(function MessageList({
     messages,
+    conversation,
     otherUser,
     isTyping = false
 }: MessageListProps) {
@@ -120,19 +122,29 @@ export const MessageList = memo(function MessageList({
                 const nextMessage = messageList[index + 1];
                 const isLastInGroup = !nextMessage || nextMessage.senderId !== message.senderId;
 
-                // Create sender object: use otherUser if available, otherwise create fallback
-                let sender = otherUser;
-                if (!isOwn && !sender) {
-                    // Fallback: create a minimal user from senderId
-                    sender = {
-                        id: message.senderId,
-                        name: 'User', // Fallback name
-                        username: 'user', // Fallback username
-                        email: '',
-                        isOnline: false,
-                        createdAt: message.createdAt,
-                        updatedAt: message.updatedAt,
-                    };
+                // Get the actual sender from conversation participants
+                let sender: User | undefined;
+                if (!isOwn) {
+                    if (conversation?.participants) {
+                        // For group chats: find sender in participants
+                        sender = conversation.participants.find(p => p.id === message.senderId);
+                    } else if (otherUser) {
+                        // For direct chats: use otherUser (backward compatibility)
+                        sender = otherUser;
+                    }
+                    
+                    // Fallback if sender not found
+                    if (!sender) {
+                        sender = {
+                            id: message.senderId,
+                            name: 'Unknown User',
+                            username: 'unknown',
+                            email: '',
+                            isOnline: false,
+                            createdAt: message.createdAt,
+                            updatedAt: message.updatedAt,
+                        };
+                    }
                 }
 
                 return (

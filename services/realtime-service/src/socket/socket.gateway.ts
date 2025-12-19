@@ -33,6 +33,11 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.redis.setMessageHandler((conversationId, message, memberIds) => {
       this.broadcastMessageToParticipants(conversationId, message, memberIds);
     });
+
+    // Register group event handler for Redis pub/sub
+    this.redis.setGroupEventHandler((event) => {
+      this.broadcastGroupEventToParticipants(event);
+    });
   }
 
   async handleConnection(client: AuthenticatedSocket) {
@@ -587,6 +592,32 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
         console.log(`✅ Sent message to user ${userId} (socket: ${socketId})`);
       } else {
         console.log(`⚠️ User ${userId} is offline, message will be fetched on reconnect`);
+      }
+    }
+  }
+
+  // Method to broadcast group events (member_added, member_removed, group_updated) to all participants
+  async broadcastGroupEventToParticipants(event: {
+    type: 'member_added' | 'member_removed' | 'group_updated';
+    conversationId: string;
+    data: any;
+    memberIds: string[];
+  }) {
+    const { type, conversationId, data, memberIds } = event;
+    console.log(`👥 Broadcasting group event '${type}' to ${memberIds.length} participants in conversation ${conversationId}`);
+    
+    for (const userId of memberIds) {
+      const socketId = await this.redis.getSocketId(userId);
+      
+      if (socketId) {
+        // Emit the specific event type
+        this.server.to(socketId).emit(type, {
+          conversationId,
+          ...data,
+        });
+        console.log(`✅ Sent ${type} event to user ${userId} (socket: ${socketId})`);
+      } else {
+        console.log(`⚠️ User ${userId} is offline, will see changes on reconnect`);
       }
     }
   }

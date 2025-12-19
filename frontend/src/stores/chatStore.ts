@@ -6,7 +6,14 @@ import { chatService } from '@/services/api/chatService';
 import { socketManager } from '@/services/websocket/socketManager';
 import { WS_EVENTS } from '@/utils/constants';
 import { useAuthStore } from './authStore';
-import type { Conversation, Message, SendMessageDto } from '@/types/chat.types';
+import type { 
+    Conversation, 
+    Message, 
+    SendMessageDto,
+    MemberAddedEvent,
+    MemberRemovedEvent,
+    GroupUpdatedEvent 
+} from '@/types/chat.types';
 
 interface ChatState {
     // State
@@ -26,6 +33,14 @@ interface ChatState {
     clearError: () => void;
     initWebSocketListeners: () => void;
     markConversationAsRead: (conversationId: string) => void;
+    
+    // Group actions
+    addConversation: (conversation: Conversation) => void;
+    updateConversation: (conversationId: string, updates: Partial<Conversation>) => void;
+    removeConversation: (conversationId: string) => void;
+    handleMemberAdded: (event: MemberAddedEvent) => void;
+    handleMemberRemoved: (event: MemberRemovedEvent) => void;
+    handleGroupUpdated: (event: GroupUpdatedEvent) => void;
 }
 
 export const useChatStore = create<ChatState>()(
@@ -222,6 +237,107 @@ export const useChatStore = create<ChatState>()(
             }));
         },
 
+        // Add a new conversation (e.g., when creating a group)
+        addConversation: (conversation) => {
+            set((state) => {
+                // Check if conversation already exists
+                const exists = state.conversations.some((c) => c.id === conversation.id);
+                if (exists) return state;
+                
+                return {
+                    conversations: [conversation, ...state.conversations],
+                };
+            });
+        },
+
+        // Update an existing conversation
+        updateConversation: (conversationId, updates) => {
+            set((state) => ({
+                conversations: state.conversations.map((conv) =>
+                    conv.id === conversationId
+                        ? { ...conv, ...updates }
+                        : conv
+                ),
+            }));
+        },
+
+        // Remove a conversation (e.g., when leaving a group)
+        removeConversation: (conversationId) => {
+            set((state) => {
+                const newMessages = { ...state.messages };
+                delete newMessages[conversationId];
+                
+                return {
+                    conversations: state.conversations.filter((c) => c.id !== conversationId),
+                    messages: newMessages,
+                    activeConversationId: 
+                        state.activeConversationId === conversationId 
+                            ? null 
+                            : state.activeConversationId,
+                };
+            });
+        },
+
+        // Handle member added to group
+        handleMemberAdded: (event) => {
+            set((state) => ({
+                conversations: state.conversations.map((conv) => {
+                    if (conv.id !== event.conversationId) return conv;
+                    
+                    // Add new member if not already present
+                    const memberExists = conv.members.some((m) => m.userId === event.userId);
+                    if (memberExists) return conv;
+                    
+                    return {
+                        ...conv,
+                        members: [
+                            ...conv.members,
+                            { userId: event.userId, role: event.role },
+                        ],
+                    };
+                }),
+            }));
+        },
+
+        // Handle member removed from group
+        handleMemberRemoved: (event) => {
+            const currentUserId = useAuthStore.getState().user?.id;
+            
+            // If current user was removed, remove the conversation
+            if (event.userId === currentUserId) {
+                get().removeConversation(event.conversationId);
+                return;
+            }
+            
+            // Otherwise, just update the members list
+            set((state) => ({
+                conversations: state.conversations.map((conv) => {
+                    if (conv.id !== event.conversationId) return conv;
+                    
+                    return {
+                        ...conv,
+                        members: conv.members.filter((m) => m.userId !== event.userId),
+                        participants: conv.participants?.filter((p) => p.id !== event.userId),
+                    };
+                }),
+            }));
+        },
+
+        // Handle group updated (name, avatar)
+        handleGroupUpdated: (event) => {
+            set((state) => ({
+                conversations: state.conversations.map((conv) => {
+                    if (conv.id !== event.conversationId) return conv;
+                    
+                    return {
+                        ...conv,
+                        name: event.name ?? conv.name,
+                        avatarUrl: event.avatarUrl ?? conv.avatarUrl,
+                    };
+                }),
+            }));
+        },
+
         // Initialize WebSocket listeners
         initWebSocketListeners: () => {
             // Join active conversation when socket connects/reconnects
@@ -338,6 +454,24 @@ export const useChatStore = create<ChatState>()(
                         })),
                     };
                 });
+            });
+
+            // Listen for group events
+            socketManager.on(WS_EVENTS.MEMBER_ADDED, (event: MemberAddedEvent) => {
+                console.log('[chatStore] Member added event:', event);
+                get().handleMemberAdded(event);
+                // Refetch conversations to get updated member details
+                get().fetchConversations();
+            });
+
+            socketManager.on(WS_EVENTS.MEMBER_REMOVED, (event: MemberRemovedEvent) => {
+                console.log('[chatStore] Member removed event:', event);
+                get().handleMemberRemoved(event);
+            });
+
+            socketManager.on(WS_EVENTS.GROUP_UPDATED, (event: GroupUpdatedEvent) => {
+                console.log('[chatStore] Group updated event:', event);
+                get().handleGroupUpdated(event);
             });
         },
     }))

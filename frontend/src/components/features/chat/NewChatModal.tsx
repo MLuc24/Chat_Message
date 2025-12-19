@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Modal } from '../../common/Modal';
 import { Spinner } from '../../common/Spinner';
 import { Avatar } from '../../common/Avatar';
@@ -19,6 +19,18 @@ export function NewChatModal({ isOpen, onClose, onConversationCreated }: NewChat
     const [isLoading, setIsLoading] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const currentUser = useAuthStore((state) => state.user);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Focus input when modal opens
+    useEffect(() => {
+        if (isOpen && inputRef.current) {
+            // Small delay to ensure modal is fully rendered
+            const timer = setTimeout(() => {
+                inputRef.current?.focus();
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
 
     // Search users
     useEffect(() => {
@@ -53,7 +65,7 @@ export function NewChatModal({ isOpen, onClose, onConversationCreated }: NewChat
         return () => clearTimeout(delayDebounce);
     }, [searchQuery, isOpen, currentUser?.id]);
 
-    const handleCreateConversation = async (userId: string) => {
+    const handleCreateConversation = useCallback(async (userId: string) => {
         if (!currentUser?.id) {
             alert('Không thể xác định người dùng hiện tại');
             return;
@@ -74,13 +86,13 @@ export function NewChatModal({ isOpen, onClose, onConversationCreated }: NewChat
         } finally {
             setIsCreating(false);
         }
-    };
+    }, [currentUser?.id, onConversationCreated, onClose]);
 
-    const handleClose = () => {
+    const handleClose = useCallback(() => {
         if (!isCreating) {
             onClose();
         }
-    };
+    }, [isCreating, onClose]);
 
     return (
         <Modal
@@ -98,6 +110,7 @@ export function NewChatModal({ isOpen, onClose, onConversationCreated }: NewChat
                     </label>
                     <div className="relative">
                         <input
+                            ref={inputRef}
                             id="search-users"
                             type="text"
                             placeholder="Nhập tên hoặc email..."

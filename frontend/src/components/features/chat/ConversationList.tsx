@@ -4,6 +4,8 @@ import { ConversationItem } from './ConversationItem';
 import { EmptyState } from '../../common/EmptyState';
 import { Spinner } from '../../common/Spinner';
 import { NewChatModal } from './NewChatModal';
+import { CreateGroupModal } from './CreateGroupModal';
+import { Dropdown, DropdownItem } from '../../common/Dropdown';
 import { useChat } from '../../../hooks/useChat';
 
 interface ConversationListProps {
@@ -18,6 +20,7 @@ export function ConversationList({
     const { conversations, fetchConversations, isLoading } = useChat();
     const [searchQuery, setSearchQuery] = useState('');
     const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
+    const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
 
     // Fetch conversations once on mount (only if authenticated)
     useEffect(() => {
@@ -46,6 +49,12 @@ export function ConversationList({
         onSelectConversation(conversationId); // Open the new conversation
     };
 
+    // Handle new group created
+    const handleGroupCreated = (conversationId: string) => {
+        fetchConversations(); // Refresh the conversation list
+        onSelectConversation(conversationId); // Open the new group
+    };
+
     if (isLoading && conversationList.length === 0) {
         return (
             <div className="flex items-center justify-center p-8">
@@ -69,16 +78,40 @@ export function ConversationList({
                             <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
                         </svg>
                     </button>
-                    {/* Create New Chat Icon */}
-                    <button
-                        className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
-                        title="New message"
-                        onClick={() => setIsNewChatModalOpen(true)}
+                    {/* Create New Chat/Group Dropdown */}
+                    <Dropdown
+                        trigger={
+                            <button
+                                className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                                title="Tạo cuộc trò chuyện mới"
+                            >
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                        }
                     >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                        </svg>
-                    </button>
+                        <DropdownItem
+                            icon={
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                </svg>
+                            }
+                            onClick={() => setIsNewChatModalOpen(true)}
+                        >
+                            Tin nhắn mới
+                        </DropdownItem>
+                        <DropdownItem
+                            icon={
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            }
+                            onClick={() => setIsCreateGroupModalOpen(true)}
+                        >
+                            Tạo nhóm mới
+                        </DropdownItem>
+                    </Dropdown>
                 </div>
             </div>
 
@@ -181,6 +214,13 @@ export function ConversationList({
                 isOpen={isNewChatModalOpen}
                 onClose={() => setIsNewChatModalOpen(false)}
                 onConversationCreated={handleConversationCreated}
+            />
+
+            {/* Create Group Modal */}
+            <CreateGroupModal
+                isOpen={isCreateGroupModalOpen}
+                onClose={() => setIsCreateGroupModalOpen(false)}
+                onGroupCreated={handleGroupCreated}
             />
         </div>
     );

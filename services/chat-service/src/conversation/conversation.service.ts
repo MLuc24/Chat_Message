@@ -5,11 +5,15 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import { CreateConversationDto, UpdateConversationDto } from './dto';
 
 @Injectable()
 export class ConversationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
 
   async getUserConversations(userId: string, populate?: string) {
     const conversations = await this.prisma.conversation.findMany({
@@ -184,6 +188,16 @@ export class ConversationService {
       data: updateDto,
     });
 
+    // Publish group_updated event via Redis (only for group conversations)
+    if (conversation.type === 'group') {
+      const memberIds = conversation.members.map((m) => m.userId);
+      await this.redis.publishGroupUpdated(conversationId, memberIds, {
+        name: updateDto.name,
+        avatarUrl: updateDto.avatarUrl,
+        updatedBy: userId,
+      });
+    }
+
     return updated;
   }
 
@@ -229,6 +243,16 @@ export class ConversationService {
       },
     });
 
+    // Get all member IDs including the new member for real-time notification
+    const allMemberIds = [...conversation.members.map((m) => m.userId), newMemberId];
+
+    // Publish member_added event via Redis
+    await this.redis.publishMemberAdded(conversationId, allMemberIds, {
+      userId: newMemberId,
+      addedBy: userId,
+      role: 'member',
+    });
+
     return newMember;
   }
 
@@ -245,11 +269,20 @@ export class ConversationService {
       throw new ForbiddenException('Only admins can remove other members');
     }
 
+    // Get all member IDs including the one being removed for notification
+    const allMemberIds = conversation.members.map((m) => m.userId);
+
     await this.prisma.conversationMember.deleteMany({
       where: {
         conversationId,
         userId: memberIdToRemove,
       },
+    });
+
+    // Publish member_removed event via Redis
+    await this.redis.publishMemberRemoved(conversationId, allMemberIds, {
+      userId: memberIdToRemove,
+      removedBy: userId,
     });
 
     return { message: 'Member removed' };

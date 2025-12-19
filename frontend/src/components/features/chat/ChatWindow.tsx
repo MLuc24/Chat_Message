@@ -5,6 +5,7 @@ import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { ChatHeader } from './ChatHeader';
 import { ChatInfoPanel } from './ChatInfoPanel';
+import { GroupMemberList } from './GroupMemberList';
 import { EmptyState } from '../../common/EmptyState';
 import { useChat } from '../../../hooks/useChat';
 import { chatService } from '../../../services/api/chatService';
@@ -18,8 +19,9 @@ interface ChatWindowProps {
 }
 
 export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall }: ChatWindowProps) {
-    const { currentMessages, sendMessage, isLoading, conversations } = useChat(conversationId || undefined);
+    const { currentMessages, sendMessage, isLoading, conversations, fetchConversations } = useChat(conversationId || undefined);
     const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
+    const [isMemberListOpen, setIsMemberListOpen] = useState(false);
     const [sharedMedia, setSharedMedia] = useState<Message[]>([]);
     const [sharedDocuments, setSharedDocuments] = useState<Message[]>([]);
 
@@ -153,14 +155,27 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall 
                 {/* Chat Header */}
                 <ChatHeader
                     recipient={recipient}
+                    conversation={currentConversation || undefined}
                     onVoiceCall={handleVoiceCall}
                     onVideoCall={handleVideoCall}
                     onViewInfo={() => setIsInfoPanelOpen(!isInfoPanelOpen)}
+                    onViewMembers={() => setIsMemberListOpen(true)}
+                    onLeaveGroup={async () => {
+                        if (currentConversation && currentUserId) {
+                            try {
+                                await chatService.leaveGroup(currentConversation.id);
+                                await fetchConversations();
+                            } catch (error) {
+                                console.error('Failed to leave group:', error);
+                            }
+                        }
+                    }}
                 />
 
                 {/* Messages */}
                 <MessageList
                     messages={Array.isArray(currentMessages) ? currentMessages : []}
+                    conversation={currentConversation || undefined}
                     otherUser={recipient}
                     isTyping={false}
                 />
@@ -182,6 +197,16 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall 
                     conversationId={conversationId!}
                     sharedMedia={sharedMedia}
                     sharedDocuments={sharedDocuments}
+                />
+            )}
+
+            {/* Group Member List Modal */}
+            {currentConversation?.type === 'group' && (
+                <GroupMemberList
+                    conversation={currentConversation}
+                    isOpen={isMemberListOpen}
+                    onClose={() => setIsMemberListOpen(false)}
+                    onMembersChanged={fetchConversations}
                 />
             )}
         </div>

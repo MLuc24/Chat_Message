@@ -17,7 +17,7 @@ export function Header() {
     };
 
     // Use profile avatar if available (most up-to-date), fallback to user avatar
-    const avatarUrl = profile?.avatarUrl || user?.avatarUrl || user?.avatar;
+    const avatarUrl = profile?.avatarUrl || user?.avatarUrl;
     const displayName = profile?.name || user?.name || user?.email;
 
     return (

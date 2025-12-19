@@ -70,6 +70,22 @@ export const useProfileStore = create<ProfileState>()(
             isLoading: false,
             successMessage: 'Profile updated successfully',
           });
+
+          // Update authStore user with new profile data
+          const authUser = useAuthStore.getState().user;
+          if (authUser) {
+            const updatedUser = { 
+              ...authUser, 
+              name: updatedProfile.name,
+              bio: updatedProfile.bio,
+              avatarUrl: updatedProfile.avatarUrl,
+            };
+            useAuthStore.getState().setUser(updatedUser);
+            
+            // Also update localStorage to persist across page reloads
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+          }
+
           return true;
         } catch (error: unknown) {
           set({ 

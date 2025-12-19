@@ -291,4 +291,84 @@ export class ConversationService {
 
     return count;
   }
+
+  async getConversationSettings(conversationId: string, userId: string) {
+    // Check membership
+    const member = await this.prisma.conversationMember.findUnique({
+      where: {
+        conversationId_userId: {
+          conversationId,
+          userId,
+        },
+      },
+    });
+
+    if (!member) {
+      throw new ForbiddenException('Not a member of this conversation');
+    }
+
+    // Get or create settings
+    let settings = await this.prisma.conversationSettings.findUnique({
+      where: {
+        conversationId_userId: {
+          conversationId,
+          userId,
+        },
+      },
+    });
+
+    if (!settings) {
+      settings = await this.prisma.conversationSettings.create({
+        data: {
+          conversationId,
+          userId,
+        },
+      });
+    }
+
+    return settings;
+  }
+
+  async updateConversationSettings(
+    conversationId: string,
+    userId: string,
+    updateData: {
+      mute?: boolean;
+      sound?: boolean;
+      popups?: boolean;
+      hide?: boolean;
+    },
+  ) {
+    // Check membership
+    const member = await this.prisma.conversationMember.findUnique({
+      where: {
+        conversationId_userId: {
+          conversationId,
+          userId,
+        },
+      },
+    });
+
+    if (!member) {
+      throw new ForbiddenException('Not a member of this conversation');
+    }
+
+    // Upsert settings
+    const settings = await this.prisma.conversationSettings.upsert({
+      where: {
+        conversationId_userId: {
+          conversationId,
+          userId,
+        },
+      },
+      create: {
+        conversationId,
+        userId,
+        ...updateData,
+      },
+      update: updateData,
+    });
+
+    return settings;
+  }
 }

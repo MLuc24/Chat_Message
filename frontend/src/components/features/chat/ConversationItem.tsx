@@ -59,7 +59,7 @@ export const ConversationItem = memo(function ConversationItem({
     // Avatar: use group avatar or other participant's avatar
     const avatarUrl = conversation.type === 'group'
         ? conversation.avatarUrl
-        : (otherParticipant?.avatarUrl || otherParticipant?.avatar);
+        : otherParticipant?.avatarUrl;
 
     // Online status for direct conversations
     const isOnline = conversation.type === 'direct' && otherParticipant?.isOnline;

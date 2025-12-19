@@ -101,6 +101,7 @@ export const MessageList = memo(function MessageList({
                     sender = {
                         id: message.senderId,
                         name: 'User', // Fallback name
+                        username: 'user', // Fallback username
                         email: '',
                         isOnline: false,
                         createdAt: message.createdAt,

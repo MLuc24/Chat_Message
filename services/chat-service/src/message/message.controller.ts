@@ -78,6 +78,22 @@ export class MessageController {
     return this.messageService.updateMessage(messageId, userId, updateDto);
   }
 
+  @Get('conversations/:conversationId/shared-media')
+  async getSharedMedia(
+    @Param('conversationId') conversationId: string,
+    @Headers('x-user-id') userId: string,
+  ) {
+    return this.messageService.getSharedMedia(conversationId, userId);
+  }
+
+  @Get('conversations/:conversationId/shared-documents')
+  async getSharedDocuments(
+    @Param('conversationId') conversationId: string,
+    @Headers('x-user-id') userId: string,
+  ) {
+    return this.messageService.getSharedDocuments(conversationId, userId);
+  }
+
   @Delete('messages/:id')
   async deleteMessage(
     @Param('id') messageId: string,

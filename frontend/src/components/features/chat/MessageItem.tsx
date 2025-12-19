@@ -34,7 +34,7 @@ export const MessageItem = memo(function MessageItem({
                 <div className="w-7 h-7 mt-2.5 flex-shrink-0">
                     {showAvatar && sender && (
                         <Avatar
-                            src={sender.avatarUrl || sender.avatar}
+                            src={sender.avatarUrl}
                             alt={sender.name}
                             name={sender.name}
                             size="sm"

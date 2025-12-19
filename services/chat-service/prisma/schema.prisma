@@ -81,3 +81,20 @@ model MessageStatus {
   @@index([messageId])
   @@index([userId])
 }
+
+model ConversationSettings {
+  id             String   @id @default(uuid())
+  conversationId String   @map("conversation_id")
+  userId         String   @map("user_id")
+  mute           Boolean  @default(false)
+  sound          Boolean  @default(true)
+  popups         Boolean  @default(true)
+  hide           Boolean  @default(false)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@unique([conversationId, userId])
+  @@map("conversation_settings")
+  @@index([userId])
+  @@index([conversationId])
+}

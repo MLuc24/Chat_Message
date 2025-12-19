@@ -17,23 +17,6 @@ interface UseUploadReturn {
   reset: () => void;
 }
 
-/**
- * Custom hook for file uploads
- * 
- * @example
- * ```tsx
- * const { upload, isUploading, progress, preview } = useUpload({
- *   uploadType: 'avatar',
- *   onSuccess: (result) => {
- *     console.log('Upload success:', result);
- *   },
- * });
- * 
- * const handleFileSelect = async (file: File) => {
- *   await upload(file);
- * };
- * ```
- */
 export function useUpload({
   uploadType,
   serviceUrl = '/api/users',

@@ -62,5 +62,7 @@ export interface SendMessageDto {
 }
 
 export interface CreateConversationDto {
+    type: 'direct' | 'group';
     participantIds: string[];
+    name?: string;
 }

@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ConversationService } from './conversation.service';
 import { CreateConversationDto, UpdateConversationDto, AddMemberDto } from './dto';
+import { UpdateConversationSettingsDto } from './dto/update-settings.dto';
 
 @Controller('conversations')
 export class ConversationController {
@@ -73,5 +74,22 @@ export class ConversationController {
     @Headers('x-user-id') userId: string,
   ) {
     return this.conversationService.removeMember(conversationId, userId, memberId);
+  }
+
+  @Get(':id/settings')
+  async getConversationSettings(
+    @Param('id') conversationId: string,
+    @Headers('x-user-id') userId: string,
+  ) {
+    return this.conversationService.getConversationSettings(conversationId, userId);
+  }
+
+  @Put(':id/settings')
+  async updateConversationSettings(
+    @Param('id') conversationId: string,
+    @Headers('x-user-id') userId: string,
+    @Body() updateDto: UpdateConversationSettingsDto,
+  ) {
+    return this.conversationService.updateConversationSettings(conversationId, userId, updateDto);
   }
 }

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ConversationItem } from './ConversationItem';
 import { EmptyState } from '../../common/EmptyState';
 import { Spinner } from '../../common/Spinner';
+import { NewChatModal } from './NewChatModal';
 import { useChat } from '../../../hooks/useChat';
 
 interface ConversationListProps {
@@ -16,6 +17,7 @@ export function ConversationList({
 }: ConversationListProps) {
     const { conversations, fetchConversations, isLoading } = useChat();
     const [searchQuery, setSearchQuery] = useState('');
+    const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
 
     // Fetch conversations once on mount (only if authenticated)
     useEffect(() => {
@@ -37,6 +39,12 @@ export function ConversationList({
         const query = searchQuery.toLowerCase();
         return conversationName.includes(query) || lastMessage.includes(query);
     });
+
+    // Handle new conversation created
+    const handleConversationCreated = (conversationId: string) => {
+        fetchConversations(); // Refresh the conversation list
+        onSelectConversation(conversationId); // Open the new conversation
+    };
 
     if (isLoading && conversationList.length === 0) {
         return (
@@ -65,6 +73,7 @@ export function ConversationList({
                     <button
                         className="p-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
                         title="New message"
+                        onClick={() => setIsNewChatModalOpen(true)}
                     >
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
@@ -166,6 +175,13 @@ export function ConversationList({
                     </AnimatePresence>
                 )}
             </div>
+
+            {/* New Chat Modal */}
+            <NewChatModal
+                isOpen={isNewChatModalOpen}
+                onClose={() => setIsNewChatModalOpen(false)}
+                onConversationCreated={handleConversationCreated}
+            />
         </div>
     );
 }

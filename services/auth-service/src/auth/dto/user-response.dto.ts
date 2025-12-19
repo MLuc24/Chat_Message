@@ -11,9 +11,6 @@ export class UserResponseDto {
   @ApiProperty()
   name: string;
 
-  @ApiProperty({ required: false })
-  avatarUrl?: string;
-
   @ApiProperty()
   isActive: boolean;
 

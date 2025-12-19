@@ -281,6 +281,42 @@ export class MessageService {
     return { success: true, markedCount: messages.length };
   }
 
+  async getSharedMedia(conversationId: string, userId: string) {
+    // Check membership
+    await this.checkMembership(conversationId, userId);
+
+    // Get all media messages (images and videos)
+    const mediaMessages = await this.prisma.message.findMany({
+      where: {
+        conversationId,
+        type: { in: ['image', 'video'] },
+        isDeleted: false,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100, // Limit to most recent 100 media items
+    });
+
+    return mediaMessages;
+  }
+
+  async getSharedDocuments(conversationId: string, userId: string) {
+    // Check membership
+    await this.checkMembership(conversationId, userId);
+
+    // Get all file messages
+    const documentMessages = await this.prisma.message.findMany({
+      where: {
+        conversationId,
+        type: 'file',
+        isDeleted: false,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50, // Limit to most recent 50 documents
+    });
+
+    return documentMessages;
+  }
+
   private async createMessageStatus(
     messageId: string,
     userId: string,

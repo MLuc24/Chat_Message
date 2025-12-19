@@ -16,8 +16,9 @@ class UserService {
     }
 
     async searchUsers(query: string): Promise<User[]> {
-        const { data } = await http.get<User[]>(`${API_ENDPOINTS.USERS.SEARCH}?q=${query}`);
-        return data;
+        const { data } = await http.get<{ users: User[] }>(`${API_ENDPOINTS.USERS.SEARCH}?q=${query}`);
+        // Backend returns { users: [...] }
+        return data.users || [];
     }
 }
 

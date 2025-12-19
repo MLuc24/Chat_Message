@@ -1,11 +1,14 @@
 // ChatWindow Component - Main chat container
 
+import { useState, useEffect } from 'react';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { ChatHeader } from './ChatHeader';
+import { ChatInfoPanel } from './ChatInfoPanel';
 import { EmptyState } from '../../common/EmptyState';
 import { useChat } from '../../../hooks/useChat';
-import type { SendMessageDto } from '../../../types/chat.types';
+import { chatService } from '../../../services/api/chatService';
+import type { SendMessageDto, Message } from '../../../types/chat.types';
 import type { User } from '../../../types/user.types';
 
 interface ChatWindowProps {
@@ -16,6 +19,9 @@ interface ChatWindowProps {
 
 export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall }: ChatWindowProps) {
     const { currentMessages, sendMessage, isLoading, conversations } = useChat(conversationId || undefined);
+    const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
+    const [sharedMedia, setSharedMedia] = useState<Message[]>([]);
+    const [sharedDocuments, setSharedDocuments] = useState<Message[]>([]);
 
     // Find current conversation to get recipient info
     const currentConversation = conversationId
@@ -30,6 +36,27 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall 
     const recipient = currentConversation?.participants?.find(
         (p) => p.id !== currentUserId
     );
+
+    // Load shared media and documents when conversation changes
+    useEffect(() => {
+        if (conversationId && isInfoPanelOpen) {
+            loadSharedContent();
+        }
+    }, [conversationId, isInfoPanelOpen]);
+
+    const loadSharedContent = async () => {
+        if (!conversationId) return;
+        try {
+            const [media, documents] = await Promise.all([
+                chatService.getSharedMedia(conversationId),
+                chatService.getSharedDocuments(conversationId),
+            ]);
+            setSharedMedia(media);
+            setSharedDocuments(documents);
+        } catch (error) {
+            console.error('Failed to load shared content:', error);
+        }
+    };
 
     // Handle voice call
     const handleVoiceCall = () => {
@@ -120,28 +147,43 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall 
     }
 
     return (
-        <div className="flex flex-col h-full">
-            {/* Chat Header */}
-            <ChatHeader
-                recipient={recipient}
-                onVoiceCall={handleVoiceCall}
-                onVideoCall={handleVideoCall}
-                onViewInfo={() => console.log('View info')}
-            />
+        <div className="flex h-full relative">
+            {/* Main Chat Area */}
+            <div className="flex flex-col flex-1 min-w-0">
+                {/* Chat Header */}
+                <ChatHeader
+                    recipient={recipient}
+                    onVoiceCall={handleVoiceCall}
+                    onVideoCall={handleVideoCall}
+                    onViewInfo={() => setIsInfoPanelOpen(!isInfoPanelOpen)}
+                />
 
-            {/* Messages */}
-            <MessageList
-                messages={Array.isArray(currentMessages) ? currentMessages : []}
-                otherUser={recipient}
-                isTyping={false}
-            />
+                {/* Messages */}
+                <MessageList
+                    messages={Array.isArray(currentMessages) ? currentMessages : []}
+                    otherUser={recipient}
+                    isTyping={false}
+                />
 
-            {/* Input */}
-            <ChatInput
-                onSend={handleSendMessage}
-                onSendMedia={handleSendMedia}
-                disabled={isLoading}
-            />
+                {/* Input */}
+                <ChatInput
+                    onSend={handleSendMessage}
+                    onSendMedia={handleSendMedia}
+                    disabled={isLoading}
+                />
+            </div>
+
+            {/* Chat Info Panel */}
+            {recipient && (
+                <ChatInfoPanel
+                    isOpen={isInfoPanelOpen}
+                    onClose={() => setIsInfoPanelOpen(false)}
+                    otherUser={recipient}
+                    conversationId={conversationId!}
+                    sharedMedia={sharedMedia}
+                    sharedDocuments={sharedDocuments}
+                />
+            )}
         </div>
     );
 }

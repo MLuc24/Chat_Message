@@ -20,7 +20,8 @@ interface AuthState {
     logout: () => void;
     setUser: (user: User) => void;
     clearError: () => void;
-    initAuth: () => void;
+    initAuth: () => Promise<void>;
+    refreshUserProfile: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -123,8 +124,23 @@ export const useAuthStore = create<AuthState>()(
                 // Clear error
                 clearError: () => set({ error: null }),
 
+                // Refresh user profile from server
+                refreshUserProfile: async () => {
+                    const currentUser = get().user;
+                    if (!currentUser?.id) return;
+
+                    try {
+                        const { userService } = await import('@/services/api/userService');
+                        const updatedUser = await userService.getProfile(currentUser.id);
+                        set({ user: updatedUser });
+                        localStorage.setItem('user', JSON.stringify(updatedUser));
+                    } catch (error) {
+                        console.error('Failed to refresh user profile:', error);
+                    }
+                },
+
                 // Initialize auth from localStorage
-                initAuth: () => {
+                initAuth: async () => {
                     const token = localStorage.getItem('auth_token');
                     const refreshToken = localStorage.getItem('refresh_token');
                     const userStr = localStorage.getItem('user');
@@ -133,6 +149,9 @@ export const useAuthStore = create<AuthState>()(
                         try {
                             const user = JSON.parse(userStr);
                             set({ user, token, refreshToken });
+
+                            // Fetch fresh user data from server to get latest avatarUrl
+                            get().refreshUserProfile();
 
                             // WebSocket will be connected by useWebSocket hook
                         } catch (error) {

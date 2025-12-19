@@ -66,7 +66,14 @@ export const useChatStore = create<ChatState>()(
                     })),
                 }));
                 
-                set({ conversations: conversationsWithOnlineStatus, isLoading: false });
+                // Sort conversations by last message timestamp (most recent first)
+                const sortedConversations = conversationsWithOnlineStatus.sort((a, b) => {
+                    const timeA = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+                    const timeB = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+                    return timeB - timeA;
+                });
+                
+                set({ conversations: sortedConversations, isLoading: false });
             } catch (error: any) {
                 // Don't set error if it's a 401 (handled by interceptor)
                 if (error.response?.status === 401) {
@@ -174,9 +181,9 @@ export const useChatStore = create<ChatState>()(
                 };
             });
 
-            // Update conversation's last message and unread count
-            set((state) => ({
-                conversations: state.conversations.map((conv) =>
+            // Update conversation's last message, unread count, and re-sort
+            set((state) => {
+                const updatedConversations = state.conversations.map((conv) =>
                     conv.id === message.conversationId
                         ? {
                               ...conv,
@@ -188,8 +195,17 @@ export const useChatStore = create<ChatState>()(
                                   : conv.unreadCount,
                           }
                         : conv
-                ),
-            }));
+                );
+
+                // Sort conversations by last message timestamp (most recent first)
+                const sortedConversations = updatedConversations.sort((a, b) => {
+                    const timeA = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+                    const timeB = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+                    return timeB - timeA;
+                });
+
+                return { conversations: sortedConversations };
+            });
         },
 
         // Clear error

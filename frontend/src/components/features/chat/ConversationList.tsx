@@ -1,6 +1,5 @@
-// ConversationList Component - List of conversations in sidebar
-
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ConversationItem } from './ConversationItem';
 import { EmptyState } from '../../common/EmptyState';
 import { Spinner } from '../../common/Spinner';
@@ -127,16 +126,44 @@ export function ConversationList({
                         }
                     />
                 ) : (
-                    <div>
+                    <AnimatePresence initial={false}>
                         {filteredConversations.map((conversation) => (
-                            <ConversationItem
+                            <motion.div
                                 key={conversation.id}
-                                conversation={conversation}
-                                isActive={conversation.id === activeConversationId}
-                                onClick={() => onSelectConversation(conversation.id)}
-                            />
+                                layout
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ 
+                                    opacity: 1, 
+                                    y: 0,
+                                    transition: {
+                                        type: "spring",
+                                        stiffness: 500,
+                                        damping: 30,
+                                        mass: 1
+                                    }
+                                }}
+                                exit={{ 
+                                    opacity: 0, 
+                                    x: -100,
+                                    transition: { duration: 0.2 }
+                                }}
+                                transition={{
+                                    layout: {
+                                        type: "spring",
+                                        stiffness: 400,
+                                        damping: 35,
+                                        mass: 0.8
+                                    }
+                                }}
+                            >
+                                <ConversationItem
+                                    conversation={conversation}
+                                    isActive={conversation.id === activeConversationId}
+                                    onClick={() => onSelectConversation(conversation.id)}
+                                />
+                            </motion.div>
                         ))}
-                    </div>
+                    </AnimatePresence>
                 )}
             </div>
         </div>

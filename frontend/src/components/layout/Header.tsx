@@ -15,20 +15,19 @@ export function Header() {
     };
 
     return (
-        <header className="bg-white border-b border-gray-200 px-6 py-3">
-            <div className="flex items-center justify-between">
-                {/* Logo with icon - clickable to go home */}
+        <header className="bg-white border-b border-gray-200 px-6">
+            <div className="flex items-center justify-between h-20">
+                {/* Logo - clickable to go home */}
                 <button
                     onClick={() => navigate(ROUTES.CHAT)}
-                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                    className="hover:opacity-80 transition-opacity h-full flex items-center"
                     title="Go to chat"
                 >
                     <img 
                         src="/logo chat message.png" 
-                        alt="MessApp Logo" 
-                        className="w-9 h-9 rounded-lg object-cover"
+                        alt="Logo" 
+                        className="h-full w-auto object-contain"
                     />
-                    <h1 className="text-lg font-bold text-slate-800">MessApp</h1>
                 </button>
 
                 {/* User profile */}
@@ -36,7 +35,7 @@ export function Header() {
                     {/* Profile clickable section */}
                     <button
                         onClick={() => navigate(ROUTES.PROFILE)}
-                        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                        className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                         title="View profile"
                     >
                         <span className="text-sm font-medium text-gray-700">
@@ -46,7 +45,7 @@ export function Header() {
                             src={user?.avatarUrl || user?.avatar}
                             alt={user?.name || 'User'}
                             name={user?.name || user?.email || 'User'}
-                            size="sm"
+                            size="md"
                         />
                     </button>
 

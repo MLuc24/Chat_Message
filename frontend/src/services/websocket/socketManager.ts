@@ -29,7 +29,6 @@ class SocketManager {
         }
 
         this.isConnecting = true;
-        console.log('[WebSocket] Connecting to:', config.wsUrl);
         this.socket = io(config.wsUrl, {
             reconnection: true,
             reconnectionDelay: 1000,
@@ -39,14 +38,12 @@ class SocketManager {
 
         this.socket.on('connect', () => {
             this.isConnecting = false;
-            console.log('[WebSocket] Connected successfully! Socket ID:', this.socket?.id);
             // Authenticate after connection
             this.socket?.emit('authenticate', { token });
-            console.log('[WebSocket] Authentication token sent');
         });
 
         this.socket.on('authenticated', (data) => {
-            console.log('[WebSocket] Authenticated:', data);
+            // Authenticated successfully
         });
 
         this.socket.on('unauthorized', (data) => {
@@ -56,7 +53,6 @@ class SocketManager {
 
         this.socket.on('disconnect', (reason) => {
             this.isConnecting = false;
-            console.log('[WebSocket] Disconnected:', reason);
         });
 
         this.socket.on('connect_error', (error) => {
@@ -66,7 +62,6 @@ class SocketManager {
 
         // Re-authenticate on reconnect (handlers are already registered)
         this.socket.on('reconnect', () => {
-            console.log('[WebSocket] Reconnected, re-authenticating...');
             this.socket?.emit('authenticate', { token });
         });
     }
@@ -78,7 +73,6 @@ class SocketManager {
             this.socket = null;
             this.eventHandlers.clear();
             this.isConnecting = false;
-            console.log('[WebSocket] Disconnected and cleaned up');
         }
     }
 

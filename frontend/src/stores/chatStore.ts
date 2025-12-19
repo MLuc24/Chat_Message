@@ -49,15 +49,6 @@ export const useChatStore = create<ChatState>()(
             set({ isLoading: true, error: null });
             try {
                 const conversations = await chatService.getConversations();
-                console.log('[chatStore] Fetched conversations:', conversations);
-                
-                // Debug: Log first conversation's participants
-                if (conversations && conversations.length > 0) {
-                    console.log('[chatStore] First conversation participants:', conversations[0].participants);
-                    if (conversations[0].participants && conversations[0].participants.length > 0) {
-                        console.log('[chatStore] First participant data:', conversations[0].participants[0]);
-                    }
-                }
 
                 // Ensure conversations is always an array
                 const conversationsArray = Array.isArray(conversations) ? conversations : [];
@@ -132,7 +123,6 @@ export const useChatStore = create<ChatState>()(
             // Leave previous conversation
             if (previousConversationId && socketManager.isConnected) {
                 socketManager.emit(WS_EVENTS.LEAVE_CONVERSATION, { conversationId: previousConversationId });
-                console.log('[chatStore] Left conversation:', previousConversationId);
             }
 
             set({ activeConversationId: conversationId });
@@ -141,9 +131,6 @@ export const useChatStore = create<ChatState>()(
                 // Join new conversation (only if socket is connected)
                 if (socketManager.isConnected) {
                     socketManager.emit(WS_EVENTS.JOIN_CONVERSATION, { conversationId });
-                    console.log('[chatStore] Joined conversation:', conversationId);
-                } else {
-                    console.warn('[chatStore] Socket not connected, will join on connect');
                 }
 
                 // Mark conversation as read (clear unread count and bold styling)
@@ -209,11 +196,8 @@ export const useChatStore = create<ChatState>()(
         initWebSocketListeners: () => {
             // Join active conversation when socket connects/reconnects
             const handleAuthenticated = (data: { userId: string }) => {
-                console.log('[chatStore] Socket authenticated:', data);
-                
                 const { activeConversationId } = get();
                 if (activeConversationId && socketManager.isConnected) {
-                    console.log('[chatStore] Socket authenticated, joining conversation:', activeConversationId);
                     socketManager.emit(WS_EVENTS.JOIN_CONVERSATION, { conversationId: activeConversationId });
                 }
 
@@ -236,7 +220,6 @@ export const useChatStore = create<ChatState>()(
 
             // Listen for new messages
             socketManager.on(WS_EVENTS.MESSAGE_NEW, (message: Message) => {
-                console.log('[chatStore] Received new message via WebSocket:', message);
                 get().addMessage(message);
             });
 
@@ -270,7 +253,6 @@ export const useChatStore = create<ChatState>()(
 
             // Listen for presence updates
             socketManager.on(WS_EVENTS.USER_ONLINE, ({ userId }: { userId: string }) => {
-                console.log('[chatStore] User came online:', userId);
                 set((state) => {
                     const newOnlineUsers = new Set(state.onlineUsers);
                     newOnlineUsers.add(userId);
@@ -288,7 +270,6 @@ export const useChatStore = create<ChatState>()(
             });
 
             socketManager.on(WS_EVENTS.USER_OFFLINE, ({ userId }: { userId: string }) => {
-                console.log('[chatStore] User went offline:', userId);
                 set((state) => {
                     const newOnlineUsers = new Set(state.onlineUsers);
                     newOnlineUsers.delete(userId);

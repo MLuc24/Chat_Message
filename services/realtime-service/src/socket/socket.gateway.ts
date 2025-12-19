@@ -229,6 +229,146 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
+  // ==================== Voice Call Signaling ====================
+
+  @SubscribeMessage('voice_call_offer')
+  async handleVoiceCallOffer(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: {
+      targetUserId: string;
+      offer: RTCSessionDescriptionInit;
+      conversationId: string;
+    },
+  ) {
+    if (!client.userId) {
+      client.emit('error', { message: 'Not authenticated' });
+      return;
+    }
+
+    const { targetUserId, offer, conversationId } = data;
+
+    // Get target user's socket ID from Redis
+    const targetSocketId = await this.redis.getSocketId(targetUserId);
+    
+    if (!targetSocketId) {
+      client.emit('voice_call_failed', { 
+        reason: 'User is offline',
+        targetUserId 
+      });
+      return;
+    }
+
+    // Forward offer to target user
+    this.server.to(targetSocketId).emit('voice_call_incoming', {
+      callerId: client.userId,
+      callerEmail: client.userEmail,
+      offer,
+      conversationId,
+      timestamp: new Date(),
+    });
+
+    console.log(`📞 Voice call offer from ${client.userId} to ${targetUserId}`);
+  }
+
+  @SubscribeMessage('voice_call_answer')
+  async handleVoiceCallAnswer(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: {
+      callerId: string;
+      answer: RTCSessionDescriptionInit;
+    },
+  ) {
+    if (!client.userId) return;
+
+    const { callerId, answer } = data;
+
+    // Get caller's socket ID
+    const callerSocketId = await this.redis.getSocketId(callerId);
+    
+    if (!callerSocketId) {
+      client.emit('voice_call_failed', { reason: 'Caller disconnected' });
+      return;
+    }
+
+    // Forward answer to caller
+    this.server.to(callerSocketId).emit('voice_call_answered', {
+      answer,
+      answeredBy: client.userId,
+      timestamp: new Date(),
+    });
+
+    console.log(`✅ Voice call answered by ${client.userId} to ${callerId}`);
+  }
+
+  @SubscribeMessage('voice_call_ice_candidate')
+  async handleVoiceCallIceCandidate(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: {
+      targetUserId: string;
+      candidate: RTCIceCandidateInit;
+    },
+  ) {
+    if (!client.userId) return;
+
+    const { targetUserId, candidate } = data;
+
+    // Get target user's socket ID
+    const targetSocketId = await this.redis.getSocketId(targetUserId);
+    
+    if (targetSocketId) {
+      this.server.to(targetSocketId).emit('voice_call_ice_candidate', {
+        candidate,
+        fromUserId: client.userId,
+      });
+    }
+  }
+
+  @SubscribeMessage('voice_call_reject')
+  async handleVoiceCallReject(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { callerId: string; reason?: string },
+  ) {
+    if (!client.userId) return;
+
+    const { callerId, reason } = data;
+
+    // Get caller's socket ID
+    const callerSocketId = await this.redis.getSocketId(callerId);
+    
+    if (callerSocketId) {
+      this.server.to(callerSocketId).emit('voice_call_rejected', {
+        rejectedBy: client.userId,
+        reason: reason || 'Call declined',
+        timestamp: new Date(),
+      });
+    }
+
+    console.log(`❌ Voice call rejected by ${client.userId}`);
+  }
+
+  @SubscribeMessage('voice_call_end')
+  async handleVoiceCallEnd(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { targetUserId: string; duration?: number },
+  ) {
+    if (!client.userId) return;
+
+    const { targetUserId, duration } = data;
+
+    // Get target user's socket ID
+    const targetSocketId = await this.redis.getSocketId(targetUserId);
+    
+    if (targetSocketId) {
+      this.server.to(targetSocketId).emit('voice_call_ended', {
+        endedBy: client.userId,
+        duration,
+        timestamp: new Date(),
+      });
+    }
+
+    console.log(`📞 Voice call ended by ${client.userId}, duration: ${duration}s`);
+  }
+
   // Method to send message from external services
   async broadcastMessage(conversationId: string, message: any) {
     this.server.to(conversationId).emit('message_new', message);

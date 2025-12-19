@@ -4,7 +4,7 @@ interface AvatarProps {
     src?: string;
     alt: string;
     name?: string; // Fallback initials
-    size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+    size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
     status?: 'online' | 'offline' | 'busy' | 'away';
     className?: string;
 }
@@ -15,6 +15,7 @@ const sizeClasses = {
     md: 'w-10 h-10 text-base',
     lg: 'w-12 h-12 text-lg',
     xl: 'w-16 h-16 text-xl',
+    '2xl': 'w-20 h-20 text-2xl',
 };
 
 const statusColors = {
@@ -30,6 +31,7 @@ const statusSizes = {
     md: 'w-2.5 h-2.5',
     lg: 'w-3 h-3',
     xl: 'w-4 h-4',
+    '2xl': 'w-5 h-5',
 };
 
 function getInitials(name: string): string {

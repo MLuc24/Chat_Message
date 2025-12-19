@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Call Test - Messenger</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #3b82f6;
+            margin-bottom: 10px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .status.disconnected { background: #fee; color: #c00; }
+        .status.connected { background: #efe; color: #0a0; }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover { opacity: 0.8; }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 5px 0;
+            box-sizing: border-box;
+        }
+        .messages {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .message {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+        .message.info { background: #dbeafe; }
+        .message.success { background: #d1fae5; }
+        .message.error { background: #fee2e2; color: #991b1b; }
+        .message.warning { background: #fef3c7; }
+        .label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📞 Voice Call Test</h1>
+        <p>Test voice call signaling and WebRTC connection</p>
+
+        <!-- Connection Status -->
+        <div id="status" class="status disconnected">
+            ❌ Disconnected
+        </div>
+
+        <!-- Configuration -->
+        <label class="label">WebSocket URL:</label>
+        <input type="text" id="wsUrl" value="http://localhost:9000" placeholder="http://localhost:9000">
+
+        <label class="label">Access Token (from /api/auth/login):</label>
+        <input type="text" id="token" placeholder="Paste your JWT access token here">
+
+        <label class="label">Target User ID (to call):</label>
+        <input type="text" id="targetUserId" placeholder="e.g., 11111111-1111-1111-1111-111111111111">
+
+        <label class="label">Conversation ID:</label>
+        <input type="text" id="conversationId" placeholder="e.g., conv-id-here">
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn-primary" onclick="connect()">Connect</button>
+            <button class="btn-danger" onclick="disconnect()">Disconnect</button>
+            <button class="btn-success" id="authBtn" onclick="authenticate()" disabled>Authenticate</button>
+            <button class="btn-warning" id="callBtn" onclick="makeCall()" disabled>Make Call</button>
+        </div>
+
+        <h2>📨 Events Log</h2>
+        <button class="btn-warning" onclick="clearMessages()">Clear Log</button>
+        <div id="messages" class="messages"></div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        let socket = null;
+        const statusDiv = document.getElementById('status');
+        const messagesDiv = document.getElementById('messages');
+
+        function addMessage(text, type = 'info') {
+            const msg = document.createElement('div');
+            msg.className = `message ${type}`;
+            const time = new Date().toLocaleTimeString();
+            msg.innerHTML = `<strong>[${time}]</strong> ${text}`;
+            messagesDiv.appendChild(msg);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function updateStatus(connected) {
+            if (connected) {
+                statusDiv.className = 'status connected';
+                statusDiv.textContent = '✅ Connected';
+                document.getElementById('authBtn').disabled = false;
+            } else {
+                statusDiv.className = 'status disconnected';
+                statusDiv.textContent = '❌ Disconnected';
+                document.getElementById('authBtn').disabled = true;
+                document.getElementById('callBtn').disabled = true;
+            }
+        }
+
+        function connect() {
+            const wsUrl = document.getElementById('wsUrl').value.trim();
+            if (!wsUrl) {
+                alert('Please enter WebSocket URL');
+                return;
+            }
+
+            addMessage('Connecting to ' + wsUrl, 'info');
+            socket = io(wsUrl, {
+                transports: ['websocket', 'polling'],
+                reconnection: true
+            });
+
+            socket.on('connect', () => {
+                addMessage('✅ Connected to WebSocket server', 'success');
+                updateStatus(true);
+            });
+
+            socket.on('disconnect', () => {
+                addMessage('❌ Disconnected from server', 'error');
+                updateStatus(false);
+            });
+
+            socket.on('authenticated', (data) => {
+                addMessage('✅ Authenticated: ' + JSON.stringify(data, null, 2), 'success');
+                document.getElementById('callBtn').disabled = false;
+            });
+
+            socket.on('unauthorized', (data) => {
+                addMessage('❌ Unauthorized: ' + JSON.stringify(data, null, 2), 'error');
+            });
+
+            // Voice call events
+            socket.on('voice_call_incoming', (data) => {
+                addMessage('📞 INCOMING CALL: ' + JSON.stringify(data, null, 2), 'warning');
+                
+                // Auto answer for testing
+                if (confirm('Incoming call from ' + data.callerEmail + '. Answer?')) {
+                    socket.emit('voice_call_answer', {
+                        callerId: data.callerId,
+                        answer: { type: 'answer', sdp: 'test-answer-sdp' }
+                    });
+                    addMessage('✅ Answered call', 'success');
+                } else {
+                    socket.emit('voice_call_reject', {
+                        callerId: data.callerId,
+                        reason: 'Declined by user'
+                    });
+                    addMessage('❌ Rejected call', 'warning');
+                }
+            });
+
+            socket.on('voice_call_answered', (data) => {
+                addMessage('✅ CALL ANSWERED: ' + JSON.stringify(data, null, 2), 'success');
+            });
+
+            socket.on('voice_call_rejected', (data) => {
+                addMessage('❌ CALL REJECTED: ' + JSON.stringify(data, null, 2), 'error');
+            });
+
+            socket.on('voice_call_ended', (data) => {
+                addMessage('📞 CALL ENDED: ' + JSON.stringify(data, null, 2), 'warning');
+            });
+
+            socket.on('voice_call_failed', (data) => {
+                addMessage('❌ CALL FAILED: ' + JSON.stringify(data, null, 2), 'error');
+            });
+
+            socket.on('voice_call_ice_candidate', (data) => {
+                addMessage('🔄 ICE Candidate: ' + JSON.stringify(data, null, 2), 'info');
+            });
+
+            socket.on('error', (error) => {
+                addMessage('❌ Error: ' + JSON.stringify(error, null, 2), 'error');
+            });
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                updateStatus(false);
+                addMessage('Disconnected', 'warning');
+            }
+        }
+
+        function authenticate() {
+            const token = document.getElementById('token').value.trim();
+            if (!token) {
+                alert('Please enter access token');
+                return;
+            }
+
+            addMessage('Authenticating with token...', 'info');
+            socket.emit('authenticate', { token });
+        }
+
+        function makeCall() {
+            const targetUserId = document.getElementById('targetUserId').value.trim();
+            const conversationId = document.getElementById('conversationId').value.trim();
+
+            if (!targetUserId || !conversationId) {
+                alert('Please enter Target User ID and Conversation ID');
+                return;
+            }
+
+            const offer = {
+                type: 'offer',
+                sdp: 'test-offer-sdp-' + Date.now()
+            };
+
+            addMessage('📞 Making call to ' + targetUserId, 'info');
+            socket.emit('voice_call_offer', {
+                targetUserId,
+                conversationId,
+                offer
+            });
+        }
+
+        function clearMessages() {
+            messagesDiv.innerHTML = '';
+            addMessage('Log cleared', 'info');
+        }
+
+        // Auto-load message
+        window.onload = () => {
+            addMessage('🚀 Voice Call Test Page Loaded', 'success');
+            addMessage('1. Enter WebSocket URL (default: http://localhost:9000)', 'info');
+            addMessage('2. Click "Connect" to establish WebSocket connection', 'info');
+            addMessage('3. Paste your access token (from /api/auth/login)', 'info');
+            addMessage('4. Click "Authenticate" to verify token', 'info');
+            addMessage('5. Enter Target User ID and Conversation ID', 'info');
+            addMessage('6. Click "Make Call" to initiate voice call', 'info');
+        };
+    </script>
+</body>
+</html>

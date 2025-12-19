@@ -6,12 +6,14 @@ import { ChatHeader } from './ChatHeader';
 import { EmptyState } from '../../common/EmptyState';
 import { useChat } from '../../../hooks/useChat';
 import type { SendMessageDto } from '../../../types/chat.types';
+import type { User } from '../../../types/user.types';
 
 interface ChatWindowProps {
     conversationId: string | null;
+    onStartVoiceCall?: (targetUser: User, conversationId: string) => void;
 }
 
-export function ChatWindow({ conversationId }: ChatWindowProps) {
+export function ChatWindow({ conversationId, onStartVoiceCall }: ChatWindowProps) {
     const { currentMessages, sendMessage, isLoading, conversations } = useChat(conversationId || undefined);
 
     // Find current conversation to get recipient info
@@ -27,6 +29,13 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
     const recipient = currentConversation?.participants?.find(
         (p) => p.id !== currentUserId
     );
+
+    // Handle voice call
+    const handleVoiceCall = () => {
+        if (recipient && conversationId && onStartVoiceCall) {
+            onStartVoiceCall(recipient, conversationId);
+        }
+    };
 
     const handleSendMessage = async (content: string) => {
         if (!conversationId) return;
@@ -107,7 +116,7 @@ export function ChatWindow({ conversationId }: ChatWindowProps) {
             {/* Chat Header */}
             <ChatHeader
                 recipient={recipient}
-                onVoiceCall={() => console.log('Voice call')}
+                onVoiceCall={handleVoiceCall}
                 onVideoCall={() => console.log('Video call')}
                 onViewInfo={() => console.log('View info')}
             />

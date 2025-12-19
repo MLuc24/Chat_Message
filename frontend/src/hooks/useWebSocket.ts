@@ -11,7 +11,6 @@ export function useWebSocket() {
     useEffect(() => {
         // Only connect once per token
         if (token && !hasConnected.current && !socketManager.isConnected) {
-            console.log('[useWebSocket] Connecting socket...');
             socketManager.connect(token);
             hasConnected.current = true;
         }

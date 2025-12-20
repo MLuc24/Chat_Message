@@ -1,4 +1,4 @@
-import { memo, useState, useRef, useEffect } from 'react';
+import { memo, useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { EMOJI_CATEGORIES, getFrequentEmojis, addFrequentEmoji, searchEmojis } from '../../../utils/emojiData';
 
 interface EmojiPickerProps {
@@ -32,26 +32,23 @@ export const EmojiPicker = memo(function EmojiPicker({ onEmojiSelect, onClose }:
     // Get current category data
     const selectedCategory = EMOJI_CATEGORIES.find((cat) => cat.id === selectedCategoryId);
     
-    // Get emojis to display
-    let emojisToShow: string[] = [];
-    
-    if (searchQuery.trim()) {
-        // Search mode
-        emojisToShow = searchEmojis(searchQuery);
-    } else if (selectedCategoryId === 'frequent') {
-        // Frequent emojis
-        emojisToShow = frequentEmojis;
-    } else {
-        // Category emojis
-        emojisToShow = selectedCategory?.emojis || [];
-    }
+    // Memoize emojis to display - tối ưu hiệu năng
+    const emojisToShow = useMemo(() => {
+        if (searchQuery.trim()) {
+            return searchEmojis(searchQuery);
+        } else if (selectedCategoryId === 'frequent') {
+            return frequentEmojis;
+        } else {
+            return selectedCategory?.emojis || [];
+        }
+    }, [searchQuery, selectedCategoryId, frequentEmojis, selectedCategory]);
 
-    const handleEmojiClick = (emoji: string) => {
+    const handleEmojiClick = useCallback((emoji: string) => {
         onEmojiSelect(emoji);
         addFrequentEmoji(emoji);
-        setFrequentEmojis(getFrequentEmojis()); // Update frequent list
+        setFrequentEmojis(getFrequentEmojis());
         onClose();
-    };
+    }, [onEmojiSelect, onClose]);
 
     return (
         <div
@@ -108,22 +105,22 @@ export const EmojiPicker = memo(function EmojiPicker({ onEmojiSelect, onClose }:
                 ))}
             </div>
 
-            {/* Emoji Grid */}
+            {/* Emoji Grid - Tối ưu với will-change và transform */}
             <div className="p-2 bg-white">
-                <div className="grid grid-cols-9 gap-1 max-h-[280px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                <div className="grid grid-cols-10 gap-0.5 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                     {emojisToShow.length > 0 ? (
                         emojisToShow.map((emoji, index) => (
                             <button
                                 key={`${emoji}-${index}`}
                                 onClick={() => handleEmojiClick(emoji)}
-                                className="text-2xl p-2 hover:bg-blue-50 rounded-lg transition-colors active:scale-95"
+                                className="text-xl p-1.5 hover:bg-blue-50 rounded-md transition-transform active:scale-95 will-change-transform"
                                 title={emoji}
                             >
                                 {emoji}
                             </button>
                         ))
                     ) : (
-                        <div className="col-span-9 text-center text-gray-400 py-12 text-sm">
+                        <div className="col-span-10 text-center text-gray-400 py-12 text-sm">
                             {searchQuery ? 'Không tìm thấy emoji' : 'Chưa có emoji thường dùng'}
                         </div>
                     )}

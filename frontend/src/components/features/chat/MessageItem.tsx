@@ -35,6 +35,19 @@ export const MessageItem = memo(function MessageItem({
         }
     };
 
+    // Kiểm tra xem tin nhắn có phải chỉ là emoji không
+    const isOnlyEmoji = (text: string): boolean => {
+        if (!text) return false;
+        const trimmed = text.trim();
+        // Regex chặt chẽ hơn: chỉ emoji, không có chữ cái, số, ký tự đặc biệt
+        const emojiRegex = /^[\p{Emoji_Presentation}\p{Emoji}\uFE0F\u200D]+$/u;
+        // Loại bỏ các ký tự không phải emoji
+        const withoutSpaces = trimmed.replace(/\s/g, '');
+        return withoutSpaces.length > 0 && withoutSpaces.length <= 10 && emojiRegex.test(withoutSpaces);
+    };
+
+    const isEmojiMessage = message.type === 'text' && message.text && isOnlyEmoji(message.text);
+
     return (
         <div className={`flex items-start ${isOwn ? 'justify-end' : 'justify-start'} mb-1 gap-2`}>
             {/* Avatar for received messages - only show on last message in group */}
@@ -54,19 +67,27 @@ export const MessageItem = memo(function MessageItem({
             <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-[65%]`}>
                 {/* Message bubble */}
                 <div
-                    className={`rounded-2xl overflow-hidden ${message.type === 'text'
-                        ? 'px-4 py-2.5'
-                        : 'p-1'
-                        } ${message.type === 'text' 
-                            ? isOwn
-                                ? 'bg-blue-600 text-white rounded-br-sm'
-                                : 'bg-gray-200 text-gray-900 rounded-bl-sm'
-                            : 'bg-transparent'
+                    className={`rounded-2xl overflow-hidden ${
+                        isEmojiMessage 
+                            ? '' // Không có padding và background cho emoji
+                            : message.type === 'text'
+                                ? 'px-4 py-2.5'
+                                : 'p-1'
+                        } ${
+                        isEmojiMessage
+                            ? 'bg-transparent' // Không có background cho emoji
+                            : message.type === 'text' 
+                                ? isOwn
+                                    ? 'bg-blue-600 text-white rounded-br-sm'
+                                    : 'bg-gray-200 text-gray-900 rounded-bl-sm'
+                                : 'bg-transparent'
                         }`}
                 >
                     {/* Text message */}
                     {message.type === 'text' && message.text && (
-                        <p className="text-sm break-words whitespace-pre-wrap leading-relaxed">{message.text}</p>
+                        <p className={`${isEmojiMessage ? 'text-3xl' : 'text-sm'} break-words whitespace-pre-wrap leading-relaxed`}>
+                            {message.text}
+                        </p>
                     )}
 
                     {/* Image message */}

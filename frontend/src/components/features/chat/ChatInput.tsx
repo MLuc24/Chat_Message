@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import type { FormEvent, KeyboardEvent, ChangeEvent } from 'react';
 import { uploadService } from '../../../services/api/uploadService';
 import type { UploadProgress } from '../../../services/api/uploadService';
+import { EmojiPicker } from './EmojiPicker';
 
 interface ChatInputProps {
     onSend: (message: string) => void;
@@ -21,7 +22,9 @@ export function ChatInput({ onSend, onSendMedia, disabled }: ChatInputProps) {
     const [message, setMessage] = useState('');
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const imageInputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
@@ -36,6 +39,18 @@ export function ChatInput({ onSend, onSendMedia, disabled }: ChatInputProps) {
             e.preventDefault();
             handleSubmit(e as any);
         }
+    };
+
+    const handleEmojiSelect = (emoji: string) => {
+        const cursorPos = inputRef.current?.selectionStart || message.length;
+        const newMessage = message.slice(0, cursorPos) + emoji + message.slice(cursorPos);
+        setMessage(newMessage);
+        
+        // Focus back to input and move cursor after emoji
+        setTimeout(() => {
+            inputRef.current?.focus();
+            inputRef.current?.setSelectionRange(cursorPos + emoji.length, cursorPos + emoji.length);
+        }, 0);
     };
 
     const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>, type: 'image' | 'video') => {
@@ -126,20 +141,32 @@ export function ChatInput({ onSend, onSendMedia, disabled }: ChatInputProps) {
                 </button>
 
                 {/* Sticker Icon */}
-                <button
-                    type="button"
-                    className="text-blue-600 hover:text-blue-700 transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Add sticker"
-                    disabled={disabled || isUploading}
-                >
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" />
-                    </svg>
-                </button>
+                <div className="relative">
+                    <button
+                        type="button"
+                        className="text-blue-600 hover:text-blue-700 transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Add emoji"
+                        disabled={disabled || isUploading}
+                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    >
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z" />
+                        </svg>
+                    </button>
+
+                    {/* Emoji Picker */}
+                    {showEmojiPicker && (
+                        <EmojiPicker
+                            onEmojiSelect={handleEmojiSelect}
+                            onClose={() => setShowEmojiPicker(false)}
+                        />
+                    )}
+                </div>
 
                 {/* Message input with Aa placeholder */}
                 <div className="flex-1 relative">
                     <input
+                        ref={inputRef}
                         type="text"
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}

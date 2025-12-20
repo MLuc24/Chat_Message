@@ -1,23 +1,21 @@
 import { memo, useState, useRef, useEffect } from 'react';
+import { EMOJI_CATEGORIES, getFrequentEmojis, addFrequentEmoji, searchEmojis } from '../../../utils/emojiData';
 
 interface EmojiPickerProps {
     onEmojiSelect: (emoji: string) => void;
     onClose: () => void;
 }
 
-const EMOJI_CATEGORIES = {
-    'Smileys & People': ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕'],
-    'Animals & Nature': ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🙈', '🙉', '🙊', '🐔', '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟', '🦗', '🕷️', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🦧', '🐘', '🦛', '🦏', '🐪', '🐫', '🦒', '🦘', '🐃', '🐂', '🐄', '🐎', '🐖', '🐏', '🐑', '🦙', '🐐', '🦌', '🐕', '🐩', '🦮', '🐕‍🦺', '🐈', '🐓', '🦃', '🦚', '🦜', '🦢', '🦩', '🕊️', '🐇', '🦝', '🦨', '🦡', '🦦', '🦥', '🐁', '🐀', '🐿️', '🦔'],
-    'Food & Drink': ['🍏', '🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦', '🥬', '🥒', '🌶️', '🫑', '🌽', '🥕', '🫒', '🧄', '🧅', '🥔', '🍠', '🥐', '🥯', '🍞', '🥖', '🥨', '🧀', '🥚', '🍳', '🧈', '🥞', '🧇', '🥓', '🥩', '🍗', '🍖', '🦴', '🌭', '🍔', '🍟', '🍕', '🫓', '🥪', '🥙', '🧆', '🌮', '🌯', '🫔', '🥗', '🥘', '🫕', '🥫', '🍝', '🍜', '🍲', '🍛', '🍣', '🍱', '🥟', '🦪', '🍤', '🍙', '🍚', '🍘', '🍥', '🥠', '🥮', '🍢', '🍡', '🍧', '🍨', '🍦', '🥧', '🧁', '🍰', '🎂', '🍮', '🍭', '🍬', '🍫', '🍿', '🍩', '🍪', '🌰', '🥜', '🍯'],
-    'Activity': ['⚽', '🏀', '🏈', '⚾', '🥎', '🎾', '🏐', '🏉', '🥏', '🎱', '🪀', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏', '🥅', '⛳', '🪁', '🏹', '🎣', '🤿', '🥊', '🥋', '🎽', '🛹', '🛼', '🛷', '⛸️', '🥌', '🎿', '⛷️', '🏂', '🪂', '🏋️', '🤼', '🤸', '🤺', '⛹️', '🤾', '🏌️', '🏇', '🧘', '🏊', '🤽', '🚣', '🧗', '🚴', '🚵', '🎖️', '🏆', '🏅', '🥇', '🥈', '🥉'],
-    'Travel & Places': ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🛻', '🚚', '🚛', '🚜', '🦯', '🦽', '🦼', '🛴', '🚲', '🛵', '🏍️', '🛺', '🚨', '🚔', '🚍', '🚘', '🚖', '🚡', '🚠', '🚟', '🚃', '🚋', '🚞', '🚝', '🚄', '🚅', '🚈', '🚂', '🚆', '🚇', '🚊', '🚉', '✈️', '🛫', '🛬', '🛩️', '💺', '🛰️', '🚀', '🛸', '🚁', '🛶', '⛵', '🚤', '🛥️', '🛳️', '⛴️', '🚢', '⚓', '⛽', '🚧', '🚦', '🚥', '🚏', '🗺️', '🗿', '🗽', '🗼', '🏰', '🏯', '🏟️', '🎡', '🎢', '🎠', '⛲', '⛱️', '🏖️', '🏝️', '🏜️', '🌋', '⛰️', '🏔️', '🗻', '🏕️', '⛺', '🛖', '🏠', '🏡', '🏘️', '🏚️', '🏗️', '🏭', '🏢', '🏬', '🏣', '🏤', '🏥', '🏦', '🏨', '🏪', '🏫', '🏩', '💒', '🏛️', '⛪', '🕌', '🕍', '🛕', '🕋'],
-    'Objects': ['⌚', '📱', '📲', '💻', '⌨️', '🖥️', '🖨️', '🖱️', '🖲️', '🕹️', '🗜️', '💽', '💾', '💿', '📀', '📼', '📷', '📸', '📹', '🎥', '📽️', '🎞️', '📞', '☎️', '📟', '📠', '📺', '📻', '🎙️', '🎚️', '🎛️', '🧭', '⏱️', '⏲️', '⏰', '🕰️', '⌛', '⏳', '📡', '🔋', '🔌', '💡', '🔦', '🕯️', '🪔', '🧯', '🛢️', '💸', '💵', '💴', '💶', '💷', '🪙', '💰', '💳', '💎', '⚖️', '🪜', '🧰', '🪛', '🔧', '🔨', '⚒️', '🛠️', '⛏️', '🪚', '🔩', '⚙️', '🪤', '🧱', '⛓️', '🧲', '🔫', '💣', '🧨', '🪓', '🔪', '🗡️', '⚔️', '🛡️', '🚬', '⚰️', '🪦', '⚱️', '🏺', '🔮', '📿', '🧿', '💈', '⚗️', '🔭', '🔬', '🕳️', '🩹', '🩺', '💊', '💉', '🩸', '🧬', '🦠', '🧫', '🧪'],
-};
-
 export const EmojiPicker = memo(function EmojiPicker({ onEmojiSelect, onClose }: EmojiPickerProps) {
-    const [selectedCategory, setSelectedCategory] = useState('Smileys & People');
+    const [selectedCategoryId, setSelectedCategoryId] = useState('smileys');
     const [searchQuery, setSearchQuery] = useState('');
+    const [frequentEmojis, setFrequentEmojis] = useState<string[]>([]);
     const pickerRef = useRef<HTMLDivElement>(null);
+
+    // Load frequent emojis on mount
+    useEffect(() => {
+        setFrequentEmojis(getFrequentEmojis());
+    }, []);
 
     // Close on click outside
     useEffect(() => {
@@ -31,67 +29,105 @@ export const EmojiPicker = memo(function EmojiPicker({ onEmojiSelect, onClose }:
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [onClose]);
 
-    // Get emojis for selected category
-    const emojis = EMOJI_CATEGORIES[selectedCategory as keyof typeof EMOJI_CATEGORIES] || [];
-
-    // Filter emojis by search
-    const filteredEmojis = searchQuery
-        ? emojis.filter((emoji) => emoji.includes(searchQuery))
-        : emojis;
+    // Get current category data
+    const selectedCategory = EMOJI_CATEGORIES.find((cat) => cat.id === selectedCategoryId);
+    
+    // Get emojis to display
+    let emojisToShow: string[] = [];
+    
+    if (searchQuery.trim()) {
+        // Search mode
+        emojisToShow = searchEmojis(searchQuery);
+    } else if (selectedCategoryId === 'frequent') {
+        // Frequent emojis
+        emojisToShow = frequentEmojis;
+    } else {
+        // Category emojis
+        emojisToShow = selectedCategory?.emojis || [];
+    }
 
     const handleEmojiClick = (emoji: string) => {
         onEmojiSelect(emoji);
+        addFrequentEmoji(emoji);
+        setFrequentEmojis(getFrequentEmojis()); // Update frequent list
         onClose();
     };
 
     return (
         <div
             ref={pickerRef}
-            className="absolute bottom-full left-0 mb-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 p-3 z-50"
+            className="absolute bottom-full left-0 mb-2 w-[350px] bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50"
         >
-            {/* Search */}
-            <input
-                type="text"
-                placeholder="Search emojis..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            {/* Header with Search */}
+            <div className="p-3 border-b border-gray-200 bg-gray-50">
+                <input
+                    type="text"
+                    placeholder="Tìm kiếm biểu tượng cảm xúc"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    autoFocus
+                />
+            </div>
 
             {/* Category Tabs */}
-            <div className="flex gap-1 mb-3 overflow-x-auto pb-2">
-                {Object.keys(EMOJI_CATEGORIES).map((category) => (
+            <div className="flex items-center gap-1 px-3 py-2 bg-white border-b border-gray-100 overflow-x-auto scrollbar-hide">
+                {/* Frequent category */}
+                <button
+                    onClick={() => {
+                        setSelectedCategoryId('frequent');
+                        setSearchQuery('');
+                    }}
+                    className={`flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-xl transition-all ${
+                        selectedCategoryId === 'frequent'
+                            ? 'bg-blue-100 shadow-sm scale-110'
+                            : 'hover:bg-gray-100'
+                    }`}
+                    title="Thường dùng"
+                >
+                    🕐
+                </button>
+
+                {/* Category buttons */}
+                {EMOJI_CATEGORIES.map((category) => (
                     <button
-                        key={category}
-                        onClick={() => setSelectedCategory(category)}
-                        className={`px-3 py-1 text-xs font-medium rounded-md whitespace-nowrap transition-colors ${selectedCategory === category
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
+                        key={category.id}
+                        onClick={() => {
+                            setSelectedCategoryId(category.id);
+                            setSearchQuery('');
+                        }}
+                        className={`flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg text-xl transition-all ${
+                            selectedCategoryId === category.id
+                                ? 'bg-blue-100 shadow-sm scale-110'
+                                : 'hover:bg-gray-100'
+                        }`}
+                        title={category.name}
                     >
-                        {category.split(' & ')[0]}
+                        {category.icon}
                     </button>
                 ))}
             </div>
 
             {/* Emoji Grid */}
-            <div className="grid grid-cols-8 gap-1 max-h-64 overflow-y-auto">
-                {filteredEmojis.length > 0 ? (
-                    filteredEmojis.map((emoji, index) => (
-                        <button
-                            key={`${emoji}-${index}`}
-                            onClick={() => handleEmojiClick(emoji)}
-                            className="text-2xl p-2 hover:bg-gray-100 rounded transition-colors"
-                            title={emoji}
-                        >
-                            {emoji}
-                        </button>
-                    ))
-                ) : (
-                    <div className="col-span-8 text-center text-gray-500 py-8 text-sm">
-                        No emojis found
-                    </div>
-                )}
+            <div className="p-2 bg-white">
+                <div className="grid grid-cols-9 gap-1 max-h-[280px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                    {emojisToShow.length > 0 ? (
+                        emojisToShow.map((emoji, index) => (
+                            <button
+                                key={`${emoji}-${index}`}
+                                onClick={() => handleEmojiClick(emoji)}
+                                className="text-2xl p-2 hover:bg-blue-50 rounded-lg transition-colors active:scale-95"
+                                title={emoji}
+                            >
+                                {emoji}
+                            </button>
+                        ))
+                    ) : (
+                        <div className="col-span-9 text-center text-gray-400 py-12 text-sm">
+                            {searchQuery ? 'Không tìm thấy emoji' : 'Chưa có emoji thường dùng'}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

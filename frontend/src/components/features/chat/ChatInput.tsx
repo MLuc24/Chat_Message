@@ -5,6 +5,8 @@ import type { FormEvent, KeyboardEvent, ChangeEvent } from 'react';
 import { uploadService } from '../../../services/api/uploadService';
 import type { UploadProgress } from '../../../services/api/uploadService';
 import { EmojiPicker } from './EmojiPicker';
+import { VoiceRecorder } from './VoiceRecorder';
+import { LocationPicker } from './LocationPicker';
 
 interface ChatInputProps {
     onSend: (message: string) => void;
@@ -15,14 +17,23 @@ interface ChatInputProps {
         duration?: number;
         thumbnailUrl?: string;
     }) => void;
+    onSendVoice?: (audioBlob: Blob, duration: number) => void;
+    onSendLocation?: (location: {
+        latitude: number;
+        longitude: number;
+        accuracy?: number;
+        address?: string;
+    }) => void;
     disabled?: boolean;
 }
 
-export function ChatInput({ onSend, onSendMedia, disabled }: ChatInputProps) {
+export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, disabled }: ChatInputProps) {
     const [message, setMessage] = useState('');
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+    const [showLocationPicker, setShowLocationPicker] = useState(false);
     const imageInputRef = useRef<HTMLInputElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -92,10 +103,48 @@ export function ChatInput({ onSend, onSendMedia, disabled }: ChatInputProps) {
         }
     };
 
+    const handleVoiceSend = (audioBlob: Blob, duration: number) => {
+        if (onSendVoice) {
+            onSendVoice(audioBlob, duration);
+        }
+        setShowVoiceRecorder(false);
+    };
+
+    const handleLocationSend = (location: {
+        latitude: number;
+        longitude: number;
+        accuracy?: number;
+        address?: string;
+    }) => {
+        if (onSendLocation) {
+            onSendLocation(location);
+        }
+        setShowLocationPicker(false);
+    };
+
+    // If voice recorder is active, show it instead
+    if (showVoiceRecorder) {
+        return (
+            <VoiceRecorder
+                onSend={handleVoiceSend}
+                onCancel={() => setShowVoiceRecorder(false)}
+            />
+        );
+    }
+
     return (
-        <form onSubmit={handleSubmit} className="border-t border-gray-200 px-4 py-3 bg-white">
-            {/* Upload Progress */}
-            {isUploading && (
+        <div className="relative">
+            {/* Location Picker */}
+            {showLocationPicker && (
+                <LocationPicker
+                    onSend={handleLocationSend}
+                    onCancel={() => setShowLocationPicker(false)}
+                />
+            )}
+
+            <form onSubmit={handleSubmit} className="border-t border-gray-200 px-4 py-3 bg-white">
+                {/* Upload Progress */}
+                {isUploading && (
                 <div className="mb-2">
                     <div className="flex items-center gap-2 text-sm text-blue-600">
                         <span>Uploading... {uploadProgress}%</span>
@@ -109,7 +158,7 @@ export function ChatInput({ onSend, onSendMedia, disabled }: ChatInputProps) {
                 </div>
             )}
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
                 {/* Hidden file input for both image and video */}
                 <input
                     ref={imageInputRef}
@@ -126,25 +175,52 @@ export function ChatInput({ onSend, onSendMedia, disabled }: ChatInputProps) {
                     disabled={disabled || isUploading}
                 />
 
-                {/* Add Media Circle Plus - supports both image and video */}
+                {/* Add Media Button - modern design */}
                 <button
                     type="button"
-                    className="text-blue-600 hover:text-blue-700 transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="text-blue-600 hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5"
                     title="Add photo or video"
                     disabled={disabled || isUploading}
                     onClick={() => imageInputRef.current?.click()}
                 >
-                    <svg className="w-9 h-9" fill="currentColor" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                        <path d="M13 8h-2v3H8v2h3v3h2v-3h3v-2h-3z" />
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v8m-4-4h8" />
                     </svg>
                 </button>
 
-                {/* Sticker Icon */}
+                {/* Voice Button */}
+                <button
+                    type="button"
+                    className="text-blue-600 hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5"
+                    title="Record voice message"
+                    disabled={disabled || isUploading}
+                    onClick={() => setShowVoiceRecorder(true)}
+                >
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                    </svg>
+                </button>
+
+                {/* Location Button */}
+                <button
+                    type="button"
+                    className="text-blue-600 hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5"
+                    title="Share location"
+                    disabled={disabled || isUploading}
+                    onClick={() => setShowLocationPicker(true)}
+                >
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                    </svg>
+                </button>
+
+                {/* Emoji Button */}
                 <div className="relative">
                     <button
                         type="button"
-                        className="text-blue-600 hover:text-blue-700 transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="text-blue-600 hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5"
                         title="Add emoji"
                         disabled={disabled || isUploading}
                         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
@@ -173,7 +249,7 @@ export function ChatInput({ onSend, onSendMedia, disabled }: ChatInputProps) {
                         onKeyPress={handleKeyPress}
                         placeholder="Aa"
                         disabled={disabled || isUploading}
-                        className="w-full px-3 py-2 bg-gray-100 border-0 rounded-full text-sm focus:outline-none focus:bg-gray-200 transition-colors disabled:opacity-50"
+                        className="w-full px-4 py-2.5 bg-gray-100 border-0 rounded-full text-sm focus:outline-none focus:bg-gray-200 transition-colors disabled:opacity-50"
                     />
                 </div>
 
@@ -182,7 +258,7 @@ export function ChatInput({ onSend, onSendMedia, disabled }: ChatInputProps) {
                     <button
                         type="submit"
                         disabled={disabled || isUploading}
-                        className="text-blue-600 hover:text-blue-700 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+                        className="text-blue-600 hover:bg-blue-50 disabled:text-gray-300 disabled:cursor-not-allowed transition-all flex-shrink-0 rounded-full p-1.5"
                         title="Send message"
                     >
                         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -192,7 +268,7 @@ export function ChatInput({ onSend, onSendMedia, disabled }: ChatInputProps) {
                 ) : (
                     <button
                         type="button"
-                        className="text-blue-600 hover:text-blue-700 transition-colors flex-shrink-0 disabled:opacity-50"
+                        className="text-blue-600 hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 rounded-full p-1.5"
                         title="Send like"
                         onClick={() => onSend('👍')}
                         disabled={disabled || isUploading}
@@ -203,6 +279,7 @@ export function ChatInput({ onSend, onSendMedia, disabled }: ChatInputProps) {
                     </button>
                 )}
             </div>
-        </form>
+            </form>
+        </div>
     );
 }

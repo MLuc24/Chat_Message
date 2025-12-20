@@ -1,14 +1,35 @@
-import { IsString, IsIn, IsOptional, IsNumber, IsUrl } from 'class-validator';
+import { IsString, IsIn, IsOptional, IsNumber, IsUrl, ValidateNested, IsObject } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+
+class LocationDto {
+  @ApiProperty({ description: 'Latitude', example: 21.028511 })
+  @IsNumber()
+  latitude: number;
+
+  @ApiProperty({ description: 'Longitude', example: 105.804817 })
+  @IsNumber()
+  longitude: number;
+
+  @ApiPropertyOptional({ description: 'Accuracy in meters', example: 10 })
+  @IsOptional()
+  @IsNumber()
+  accuracy?: number;
+
+  @ApiPropertyOptional({ description: 'Address', example: 'Hanoi, Vietnam' })
+  @IsOptional()
+  @IsString()
+  address?: string;
+}
 
 export class SendMessageDto {
   @ApiProperty({
     description: 'Message type',
     example: 'text',
-    enum: ['text', 'image', 'video', 'file', 'audio'],
+    enum: ['text', 'image', 'video', 'file', 'audio', 'location'],
   })
   @IsString()
-  @IsIn(['text', 'image', 'video', 'file', 'audio'])
+  @IsIn(['text', 'image', 'video', 'file', 'audio', 'location'])
   type: string;
 
   @ApiPropertyOptional({
@@ -60,12 +81,21 @@ export class SendMessageDto {
   mediaHeight?: number;
 
   @ApiPropertyOptional({
-    description: 'Media duration in seconds (for videos)',
+    description: 'Media duration in seconds (for videos/audio)',
     example: 120.5,
   })
   @IsOptional()
   @IsNumber()
   mediaDuration?: number;
+
+  @ApiPropertyOptional({
+    description: 'Location data (for location messages)',
+    type: LocationDto,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LocationDto)
+  location?: LocationDto;
 }
 
 export class UpdateMessageDto {

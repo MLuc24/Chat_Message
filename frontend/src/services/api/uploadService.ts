@@ -12,7 +12,7 @@ import axios, { type AxiosProgressEvent } from 'axios';
 import { http } from '../http';
 
 export interface UploadSignatureParams {
-  uploadType: 'avatar' | 'chat_image' | 'chat_video';
+  uploadType: 'avatar' | 'chat_image' | 'chat_video' | 'chat_audio';
   publicId?: string;
 }
 
@@ -63,6 +63,65 @@ class UploadService {
       params,
     );
     return data;
+  }
+
+  /**
+   * Upload Blob (for audio/voice recordings) directly to Cloudinary
+   * @param blob Blob to upload
+   * @param signature Signed upload parameters
+   * @param onProgress Progress callback
+   * @returns Upload result
+   */
+  async uploadBlobToCloudinary(
+    blob: Blob,
+    signature: UploadSignature,
+    onProgress?: (progress: UploadProgress) => void,
+  ): Promise<UploadResult> {
+    // Build form data
+    const formData = new FormData();
+    formData.append('file', blob);
+    formData.append('api_key', signature.apiKey);
+    formData.append('timestamp', signature.timestamp.toString());
+    formData.append('signature', signature.signature);
+    formData.append('folder', signature.folder);
+    formData.append('resource_type', 'auto'); // Auto-detect resource type
+
+    if (signature.publicId) {
+      formData.append('public_id', signature.publicId);
+    }
+
+    if (signature.transformation) {
+      formData.append('transformation', signature.transformation);
+    }
+
+    // Upload directly to Cloudinary
+    const { data } = await axios.post(signature.uploadUrl, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: (progressEvent: AxiosProgressEvent) => {
+        if (onProgress && progressEvent.total) {
+          const percentage = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total,
+          );
+          onProgress({
+            loaded: progressEvent.loaded,
+            total: progressEvent.total,
+            percentage,
+          });
+        }
+      },
+    });
+
+    return {
+      url: data.url,
+      secureUrl: data.secure_url,
+      publicId: data.public_id,
+      format: data.format,
+      width: data.width || 0,
+      height: data.height || 0,
+      duration: data.duration,
+    };
   }
 
   /**
@@ -134,7 +193,7 @@ class UploadService {
   }
 
   /**
-   * Complete upload flow: get signature -> upload -> return result
+   * Complete upload flow for files: get signature -> upload -> return result
    * @param file File to upload
    * @param uploadType Upload type
    * @param serviceUrl Service URL
@@ -155,6 +214,32 @@ class UploadService {
 
     // Upload to Cloudinary
     const result = await this.uploadToCloudinary(file, signature, onProgress);
+
+    return result;
+  }
+
+  /**
+   * Complete upload flow for Blob (audio): get signature -> upload -> return result
+   * @param blob Blob to upload
+   * @param uploadType Upload type (should be 'audio')
+   * @param serviceUrl Service URL
+   * @param onProgress Progress callback
+   * @returns Upload result
+   */
+  async uploadFile(
+    blob: Blob,
+    uploadType: 'audio',
+    serviceUrl: string = '/api/chat',
+    onProgress?: (progress: UploadProgress) => void,
+  ): Promise<UploadResult> {
+    // Get signed upload params
+    const signature = await this.getUploadSignature(
+      { uploadType: 'chat_audio' },
+      serviceUrl
+    );
+
+    // Upload to Cloudinary
+    const result = await this.uploadBlobToCloudinary(blob, signature, onProgress);
 
     return result;
   }

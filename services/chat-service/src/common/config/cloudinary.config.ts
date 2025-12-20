@@ -72,4 +72,10 @@ export const UPLOAD_OPTIONS = {
     allowed_formats: ['mp4', 'mov', 'avi', 'webm'],
     max_file_size: 50 * 1024 * 1024, // 50MB
   },
+  CHAT_AUDIO: {
+    folder: 'chat-app/messages/audio',
+    resource_type: 'video', // Cloudinary uses 'video' for audio files
+    allowed_formats: ['mp3', 'wav', 'ogg', 'webm', 'm4a'],
+    max_file_size: 10 * 1024 * 1024, // 10MB
+  },
 } as const;

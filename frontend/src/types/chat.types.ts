@@ -7,7 +7,7 @@ export interface Message {
     conversationId: string;
     senderId: string;
     text?: string;
-    type: 'text' | 'image' | 'video' | 'file' | 'audio';
+    type: 'text' | 'image' | 'video' | 'file' | 'audio' | 'location';
     
     // Media fields (for images/videos uploaded to Cloudinary)
     mediaUrl?: string;
@@ -16,6 +16,14 @@ export interface Message {
     mediaWidth?: number;
     mediaHeight?: number;
     mediaDuration?: number; // For videos/audio (in seconds)
+    
+    // Location fields (for location messages)
+    location?: {
+        latitude: number;
+        longitude: number;
+        accuracy?: number;
+        address?: string;
+    };
     
     // Legacy file fields (for backward compatibility)
     fileUrl?: string;
@@ -51,7 +59,7 @@ export interface Conversation {
 export interface SendMessageDto {
     conversationId: string;
     text?: string;
-    type: 'text' | 'image' | 'video' | 'file' | 'audio';
+    type: 'text' | 'image' | 'video' | 'file' | 'audio' | 'location';
     
     // Media fields (for Cloudinary uploads)
     mediaUrl?: string;
@@ -60,6 +68,14 @@ export interface SendMessageDto {
     mediaWidth?: number;
     mediaHeight?: number;
     mediaDuration?: number;
+    
+    // Location fields
+    location?: {
+        latitude: number;
+        longitude: number;
+        accuracy?: number;
+        address?: string;
+    };
 }
 
 export interface CreateConversationDto {

@@ -1,4 +1,4 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsIn } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
@@ -6,12 +6,13 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
  */
 export class GenerateUploadSignatureDto {
   @ApiProperty({
-    description: 'Upload type (avatar, chat_image, chat_video)',
+    description: 'Upload type (avatar, chat_image, chat_video, chat_audio)',
     example: 'chat_image',
-    enum: ['avatar', 'chat_image', 'chat_video'],
+    enum: ['avatar', 'chat_image', 'chat_video', 'chat_audio'],
   })
   @IsString()
-  uploadType: 'avatar' | 'chat_image' | 'chat_video';
+  @IsIn(['avatar', 'chat_image', 'chat_video', 'chat_audio'])
+  uploadType: 'avatar' | 'chat_image' | 'chat_video' | 'chat_audio';
 
   @ApiPropertyOptional({
     description: 'Optional public ID for the uploaded file',

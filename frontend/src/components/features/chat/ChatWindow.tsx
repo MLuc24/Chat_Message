@@ -9,6 +9,7 @@ import { GroupMemberList } from './GroupMemberList';
 import { EmptyState } from '../../common/EmptyState';
 import { useChat } from '../../../hooks/useChat';
 import { chatService } from '../../../services/api/chatService';
+import { uploadService } from '../../../services/api/uploadService';
 import type { SendMessageDto, Message } from '../../../types/chat.types';
 import type { User } from '../../../types/user.types';
 
@@ -121,6 +122,54 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall 
         }
     };
 
+    const handleSendVoice = async (audioBlob: Blob, duration: number) => {
+        if (!conversationId) return;
+
+        try {
+            // Upload audio to Cloudinary (reuse the upload service)
+            const result = await uploadService.uploadFile(
+                audioBlob,
+                'audio',
+                '/chat',
+                () => {} // No progress callback needed for voice
+            );
+
+            const dto: SendMessageDto = {
+                conversationId,
+                type: 'audio',
+                mediaUrl: result.secureUrl,
+                mediaPublicId: result.publicId,
+                mediaDuration: duration,
+            };
+
+            await sendMessage(dto);
+        } catch (error) {
+            console.error('Failed to send voice message:', error);
+            alert('Failed to send voice message');
+        }
+    };
+
+    const handleSendLocation = async (location: {
+        latitude: number;
+        longitude: number;
+        accuracy?: number;
+        address?: string;
+    }) => {
+        if (!conversationId) return;
+
+        const dto: SendMessageDto = {
+            conversationId,
+            type: 'location',
+            location,
+        };
+
+        try {
+            await sendMessage(dto);
+        } catch (error) {
+            console.error('Failed to send location message:', error);
+        }
+    };
+
     // Show empty state if no conversation selected
     if (!conversationId) {
         return (
@@ -184,6 +233,8 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall 
                 <ChatInput
                     onSend={handleSendMessage}
                     onSendMedia={handleSendMedia}
+                    onSendVoice={handleSendVoice}
+                    onSendLocation={handleSendLocation}
                     disabled={isLoading}
                 />
             </div>

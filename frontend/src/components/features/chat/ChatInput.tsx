@@ -28,10 +28,17 @@ interface ChatInputProps {
     disabled?: boolean;
 }
 
+interface UploadingFile {
+    id: string;
+    file: File;
+    preview: string;
+    progress: number;
+    type: 'image' | 'video' | 'file';
+}
+
 export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, onSendFile, disabled }: ChatInputProps) {
     const [message, setMessage] = useState('');
-    const [isUploading, setIsUploading] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState(0);
+    const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
     const [showLocationPicker, setShowLocationPicker] = useState(false);
@@ -40,7 +47,7 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        if (message.trim() && !isUploading) {
+        if (message.trim() && uploadingFiles.length === 0) {
             onSend(message.trim());
             setMessage('');
         }
@@ -70,14 +77,29 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
         const file = e.target.files?.[0];
         if (!file) return;
 
-        try {
-            setIsUploading(true);
-            setUploadProgress(0);
+        // Determine file type
+        const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+        const fileType = isImage ? 'image' : isVideo ? 'video' : 'file';
+        
+        // Create preview URL
+        const preview = isImage || isVideo ? URL.createObjectURL(file) : '';
+        
+        // Generate unique ID
+        const fileId = `${Date.now()}-${Math.random()}`;
+        
+        // Add to uploading files
+        const uploadingFile: UploadingFile = {
+            id: fileId,
+            file,
+            preview,
+            progress: 0,
+            type: fileType,
+        };
+        
+        setUploadingFiles(prev => [...prev, uploadingFile]);
 
-            // Determine file type
-            const isImage = file.type.startsWith('image/');
-            const isVideo = file.type.startsWith('video/');
-            
+        try {
             if (isImage && onSendMedia) {
                 // Handle image
                 const result = await uploadService.upload(
@@ -85,10 +107,16 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
                     'chat_image',
                     '/chat',
                     (progress: UploadProgress) => {
-                        setUploadProgress(progress.percentage);
+                        setUploadingFiles(prev => prev.map(f => 
+                            f.id === fileId ? { ...f, progress: progress.percentage } : f
+                        ));
                     }
                 );
 
+                // Remove from uploading and send
+                setUploadingFiles(prev => prev.filter(f => f.id !== fileId));
+                URL.revokeObjectURL(preview);
+                
                 onSendMedia(result.secureUrl, 'image', {
                     publicId: result.publicId,
                     width: result.width,
@@ -102,10 +130,16 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
                     'chat_video',
                     '/chat',
                     (progress: UploadProgress) => {
-                        setUploadProgress(progress.percentage);
+                        setUploadingFiles(prev => prev.map(f => 
+                            f.id === fileId ? { ...f, progress: progress.percentage } : f
+                        ));
                     }
                 );
 
+                // Remove from uploading and send
+                setUploadingFiles(prev => prev.filter(f => f.id !== fileId));
+                URL.revokeObjectURL(preview);
+                
                 onSendMedia(result.secureUrl, 'video', {
                     publicId: result.publicId,
                     width: result.width,
@@ -117,13 +151,18 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
                 // Handle document files
                 const result = await uploadService.upload(
                     file,
-                    'chat_document',
+                    'chat_image',
                     '/chat',
                     (progress: UploadProgress) => {
-                        setUploadProgress(progress.percentage);
+                        setUploadingFiles(prev => prev.map(f => 
+                            f.id === fileId ? { ...f, progress: progress.percentage } : f
+                        ));
                     }
                 );
 
+                // Remove from uploading and send
+                setUploadingFiles(prev => prev.filter(f => f.id !== fileId));
+                
                 onSendFile(result.secureUrl, file.name, file.size, file.type);
             }
 
@@ -132,9 +171,10 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
         } catch (error) {
             console.error('Failed to upload file:', error);
             alert(error instanceof Error ? error.message : 'Failed to upload file');
-        } finally {
-            setIsUploading(false);
-            setUploadProgress(0);
+            
+            // Remove from uploading on error
+            setUploadingFiles(prev => prev.filter(f => f.id !== fileId));
+            if (preview) URL.revokeObjectURL(preview);
         }
     };
 
@@ -177,21 +217,103 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
                 />
             )}
 
-            <form onSubmit={handleSubmit} className="border-t border-gray-200 px-4 py-3 bg-white">
-                {/* Upload Progress */}
-                {isUploading && (
-                <div className="mb-2">
-                    <div className="flex items-center gap-2 text-sm text-blue-600">
-                        <span>Uploading... {uploadProgress}%</span>
-                        <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
-                            <div
-                                className="bg-blue-600 h-full transition-all duration-300"
-                                style={{ width: `${uploadProgress}%` }}
-                            />
-                        </div>
+            {/* Uploading Files Preview */}
+            {uploadingFiles.length > 0 && (
+                <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                    <div className="flex flex-wrap gap-2">
+                        {uploadingFiles.map((uploadingFile) => (
+                            <div key={uploadingFile.id} className="relative">
+                                {/* Image/Video Preview */}
+                                {(uploadingFile.type === 'image' || uploadingFile.type === 'video') && (
+                                    <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-gray-200">
+                                        {uploadingFile.type === 'image' ? (
+                                            <img 
+                                                src={uploadingFile.preview} 
+                                                alt="Uploading" 
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <video 
+                                                src={uploadingFile.preview} 
+                                                className="w-full h-full object-cover"
+                                            />
+                                        )}
+                                        
+                                        {/* Circular Progress Overlay */}
+                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                            <div className="relative w-12 h-12">
+                                                {/* Background Circle */}
+                                                <svg className="w-12 h-12 transform -rotate-90">
+                                                    <circle
+                                                        cx="24"
+                                                        cy="24"
+                                                        r="20"
+                                                        stroke="rgba(255,255,255,0.3)"
+                                                        strokeWidth="3"
+                                                        fill="none"
+                                                    />
+                                                    {/* Progress Circle */}
+                                                    <circle
+                                                        cx="24"
+                                                        cy="24"
+                                                        r="20"
+                                                        stroke="white"
+                                                        strokeWidth="3"
+                                                        fill="none"
+                                                        strokeDasharray={`${2 * Math.PI * 20}`}
+                                                        strokeDashoffset={`${2 * Math.PI * 20 * (1 - uploadingFile.progress / 100)}`}
+                                                        className="transition-all duration-300"
+                                                    />
+                                                </svg>
+                                                {/* Percentage Text */}
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    <span className="text-white text-xs font-semibold">
+                                                        {uploadingFile.progress}%
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* File Preview */}
+                                {uploadingFile.type === 'file' && (
+                                    <div className="relative w-48 px-4 py-3 rounded-lg bg-white border border-gray-200">
+                                        <div className="flex items-center gap-3">
+                                            {/* File Icon */}
+                                            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                                                <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                                                </svg>
+                                            </div>
+                                            
+                                            {/* File Info */}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-gray-900 truncate">
+                                                    {uploadingFile.file.name}
+                                                </p>
+                                                <p className="text-xs text-gray-500">
+                                                    {uploadingFile.progress}%
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Linear Progress Bar */}
+                                        <div className="mt-2 bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                            <div
+                                                className="bg-blue-600 h-full transition-all duration-300"
+                                                style={{ width: `${uploadingFile.progress}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}
+
+            <form onSubmit={handleSubmit} className="border-t border-gray-200 px-4 py-3 bg-white">
 
             <div className="flex items-center gap-3">
                 {/* Hidden file input for all file types */}
@@ -201,7 +323,7 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
                     accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.7z"
                     className="hidden"
                     onChange={handleFileSelect}
-                    disabled={disabled || isUploading}
+                    disabled={disabled || uploadingFiles.length > 0}
                 />
 
                 {/* Add Media/File Button - supports image, video, and files */}
@@ -209,7 +331,7 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
                     type="button"
                     className="text-blue-600 hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5"
                     title="Add photo, video or file"
-                    disabled={disabled || isUploading}
+                    disabled={disabled || uploadingFiles.length > 0}
                     onClick={() => fileInputRef.current?.click()}
                 >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -223,7 +345,7 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
                     type="button"
                     className="text-blue-600 hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5"
                     title="Record voice message"
-                    disabled={disabled || isUploading}
+                    disabled={disabled || uploadingFiles.length > 0}
                     onClick={() => setShowVoiceRecorder(true)}
                 >
                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -237,7 +359,7 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
                     type="button"
                     className="text-blue-600 hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5"
                     title="Share location"
-                    disabled={disabled || isUploading}
+                    disabled={disabled || uploadingFiles.length > 0}
                     onClick={() => setShowLocationPicker(true)}
                 >
                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -251,7 +373,7 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
                         type="button"
                         className="text-blue-600 hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5"
                         title="Add emoji"
-                        disabled={disabled || isUploading}
+                        disabled={disabled || uploadingFiles.length > 0}
                         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     >
                         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -277,7 +399,7 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
                         onChange={(e) => setMessage(e.target.value)}
                         onKeyPress={handleKeyPress}
                         placeholder="Aa"
-                        disabled={disabled || isUploading}
+                        disabled={disabled || uploadingFiles.length > 0}
                         className="w-full px-4 py-2.5 bg-gray-100 border-0 rounded-full text-sm focus:outline-none focus:bg-gray-200 transition-colors disabled:opacity-50"
                     />
                 </div>
@@ -286,7 +408,7 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
                 {message.trim() ? (
                     <button
                         type="submit"
-                        disabled={disabled || isUploading}
+                        disabled={disabled || uploadingFiles.length > 0}
                         className="text-blue-600 hover:bg-blue-50 disabled:text-gray-300 disabled:cursor-not-allowed transition-all flex-shrink-0 rounded-full p-1.5"
                         title="Send message"
                     >
@@ -300,7 +422,7 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
                         className="text-blue-600 hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 rounded-full p-1.5"
                         title="Send like"
                         onClick={() => onSend('👍')}
-                        disabled={disabled || isUploading}
+                        disabled={disabled || uploadingFiles.length > 0}
                     >
                         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" />

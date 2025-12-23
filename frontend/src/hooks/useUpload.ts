@@ -108,18 +108,22 @@ export function useUpload({
 
 /**
  * useMultiUpload Hook
- * For uploading multiple files simultaneously
+ * For uploading multiple files simultaneously (images, videos, or mixed)
  */
 interface UseMultiUploadOptions {
-  uploadType: 'chat_image' | 'chat_video';
+  uploadType?: 'chat_image' | 'chat_video' | 'auto'; // 'auto' will detect file type
   serviceUrl?: string;
+  maxFiles?: number;
+  maxTotalSizeMB?: number; // Max total size for all files
   onComplete?: (results: UploadResult[]) => void;
   onError?: (error: Error) => void;
+  onProgress?: (completed: number, total: number) => void;
 }
 
 interface UploadItem {
   id: string;
   file: File;
+  fileType: 'image' | 'video' | 'document'; // Determined from file MIME type
   preview: string;
   progress: number;
   error: string | null;
@@ -138,26 +142,89 @@ interface UseMultiUploadReturn {
 }
 
 export function useMultiUpload({
-  uploadType,
+  uploadType = 'auto',
   serviceUrl = '/api/chat',
+  maxFiles = 10,
+  maxTotalSizeMB = 100,
   onComplete,
   onError,
+  onProgress,
 }: UseMultiUploadOptions): UseMultiUploadReturn {
   const [items, setItems] = useState<UploadItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+
+  /**
+   * Determine upload type from file MIME type
+   */
+  const getUploadTypeForFile = useCallback((file: File): 'chat_image' | 'chat_video' | 'chat_document' => {
+    if (file.type.startsWith('image/')) return 'chat_image';
+    if (file.type.startsWith('video/')) return 'chat_video';
+    return 'chat_document';
+  }, []);
+
+  /**
+   * Get file type category
+   */
+  const getFileTypeCategory = useCallback((file: File): 'image' | 'video' | 'document' => {
+    if (file.type.startsWith('image/')) return 'image';
+    if (file.type.startsWith('video/')) return 'video';
+    return 'document';
+  }, []);
+
+  /**
+   * Validate files before upload
+   */
+  const validateFiles = useCallback((files: File[]): string | null => {
+    // Check max files
+    if (files.length > maxFiles) {
+      return `Maximum ${maxFiles} files allowed`;
+    }
+
+    // Check total size
+    const totalSizeMB = files.reduce((sum, file) => sum + file.size, 0) / (1024 * 1024);
+    if (totalSizeMB > maxTotalSizeMB) {
+      return `Total file size (${totalSizeMB.toFixed(1)}MB) exceeds maximum (${maxTotalSizeMB}MB)`;
+    }
+
+    // Check individual file sizes
+    for (const file of files) {
+      const fileSizeMB = file.size / (1024 * 1024);
+      if (file.type.startsWith('image/') && fileSizeMB > 10) {
+        return `Image "${file.name}" exceeds 10MB limit`;
+      }
+      if (file.type.startsWith('video/') && fileSizeMB > 50) {
+        return `Video "${file.name}" exceeds 50MB limit`;
+      }
+      if (!file.type.startsWith('image/') && !file.type.startsWith('video/') && fileSizeMB > 20) {
+        return `File "${file.name}" exceeds 20MB limit`;
+      }
+    }
+
+    return null;
+  }, [maxFiles, maxTotalSizeMB]);
 
   /**
    * Upload multiple files
    */
   const uploadFiles = useCallback(
     async (files: File[]) => {
+      // Validate files
+      const validationError = validateFiles(files);
+      if (validationError) {
+        onError?.(new Error(validationError));
+        return;
+      }
+
       setIsUploading(true);
 
-      // Create upload items
+      // Create upload items with auto-detected file types
       const newItems: UploadItem[] = files.map((file) => ({
         id: Math.random().toString(36).substring(7),
         file,
-        preview: URL.createObjectURL(file),
+        fileType: getFileTypeCategory(file),
+        preview: file.type.startsWith('image/') || file.type.startsWith('video/') 
+          ? URL.createObjectURL(file) 
+          : '',
         progress: 0,
         error: null,
         result: null,
@@ -177,9 +244,14 @@ export function useMultiUpload({
           );
 
           try {
+            // Determine upload type for this specific file
+            const fileUploadType = uploadType === 'auto' 
+              ? getUploadTypeForFile(item.file)
+              : uploadType;
+
             const result = await uploadService.upload(
               item.file,
-              uploadType,
+              fileUploadType,
               serviceUrl,
               (progressData) => {
                 setItems((prev) =>
@@ -198,6 +270,14 @@ export function useMultiUpload({
                   : i,
               ),
             );
+
+            // Notify progress
+            if (onProgress) {
+              const completed = newItems.filter(i => 
+                i.status === 'completed' || i.id === item.id
+              ).length;
+              onProgress(completed, newItems.length);
+            }
 
             return result;
           } catch (error) {
@@ -235,7 +315,7 @@ export function useMultiUpload({
         onError(new Error(`${errors.length} upload(s) failed`));
       }
     },
-    [uploadType, serviceUrl, onComplete, onError],
+    [uploadType, serviceUrl, maxFiles, maxTotalSizeMB, validateFiles, getFileTypeCategory, getUploadTypeForFile, onComplete, onError, onProgress],
   );
 
   /**

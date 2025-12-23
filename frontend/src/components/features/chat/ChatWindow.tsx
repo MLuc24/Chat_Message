@@ -10,8 +10,16 @@ import { EmptyState } from '../../common/EmptyState';
 import { useChat } from '../../../hooks/useChat';
 import { chatService } from '../../../services/api/chatService';
 import { uploadService } from '../../../services/api/uploadService';
-import type { SendMessageDto, Message } from '../../../types/chat.types';
+import type { SendMessageDto, Message, MediaItem } from '../../../types/chat.types';
 import type { User } from '../../../types/user.types';
+
+interface UploadingFile {
+    id: string;
+    file: File;
+    preview: string;
+    progress: number;
+    type: 'image' | 'video' | 'file';
+}
 
 interface ChatWindowProps {
     conversationId: string | null;
@@ -25,6 +33,7 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall 
     const [isMemberListOpen, setIsMemberListOpen] = useState(false);
     const [sharedMedia, setSharedMedia] = useState<Message[]>([]);
     const [sharedDocuments, setSharedDocuments] = useState<Message[]>([]);
+    const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
 
     // Find current conversation to get recipient info
     const currentConversation = conversationId
@@ -119,6 +128,22 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall 
             await sendMessage(dto);
         } catch (error) {
             console.error('Failed to send media message:', error);
+        }
+    };
+
+    const handleSendMediaGroup = async (mediaItems: MediaItem[]) => {
+        if (!conversationId) return;
+
+        const dto: SendMessageDto = {
+            conversationId,
+            type: 'media_group',
+            mediaItems,
+        };
+
+        try {
+            await sendMessage(dto);
+        } catch (error) {
+            console.error('Failed to send media group message:', error);
         }
     };
 
@@ -251,16 +276,19 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall 
                     conversation={currentConversation || undefined}
                     otherUser={recipient}
                     isTyping={false}
+                    uploadingFiles={uploadingFiles}
                 />
 
                 {/* Input */}
                 <ChatInput
                     onSend={handleSendMessage}
                     onSendMedia={handleSendMedia}
+                    onSendMediaGroup={handleSendMediaGroup}
                     onSendVoice={handleSendVoice}
                     onSendLocation={handleSendLocation}
                     onSendFile={handleSendFile}
                     disabled={isLoading}
+                    onUploadingFilesChange={setUploadingFiles}
                 />
             </div>
 
@@ -282,7 +310,8 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall 
                     conversation={currentConversation}
                     isOpen={isMemberListOpen}
                     onClose={() => setIsMemberListOpen(false)}
-                    onMembersChanged={fetchConversations}
+                    onMemberAdded={fetchConversations}
+                    onMemberRemoved={fetchConversations}
                 />
             )}
         </div>

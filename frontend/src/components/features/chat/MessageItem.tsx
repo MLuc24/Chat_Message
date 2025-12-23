@@ -420,6 +420,61 @@ export const MessageItem = memo(function MessageItem({
                             )}
                         </>
                     )}
+
+                    {/* Grouped Media (multiple images/videos) */}
+                    {message.type === 'media_group' && message.mediaItems && message.mediaItems.length > 0 && (
+                        <div className={`grid gap-1 max-w-md ${
+                            message.mediaItems.length === 1 ? 'grid-cols-1' :
+                            message.mediaItems.length === 2 ? 'grid-cols-2' :
+                            'grid-cols-3'
+                        }`}>
+                            {message.mediaItems.map((media, index) => (
+                                <div 
+                                    key={index}
+                                    className="relative aspect-square cursor-pointer overflow-hidden rounded-lg group"
+                                    onClick={() => onMediaClick?.(message)}
+                                >
+                                    {media.type === 'image' ? (
+                                        <>
+                                            <img 
+                                                src={media.url}
+                                                alt=""
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                onError={(e) => {
+                                                    console.error('Failed to load image:', media.url);
+                                                    e.currentTarget.style.display = 'none';
+                                                }}
+                                            />
+                                            {/* Hover overlay */}
+                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-black/40 via-black/20 to-transparent">
+                                                <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 transform group-hover:scale-110 transition-transform">
+                                                    <svg className="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <video 
+                                                src={media.url}
+                                                poster={media.thumbnailUrl}
+                                                className="w-full h-full object-cover"
+                                            />
+                                            {/* Play button overlay for video */}
+                                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/50 via-black/30 to-transparent group-hover:from-black/60 group-hover:via-black/40 transition-all">
+                                                <div className="w-12 h-12 rounded-full bg-white/95 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-all shadow-lg">
+                                                    <svg className="w-6 h-6 text-blue-600 ml-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Timestamp - only show on last message in group */}

@@ -1,9 +1,9 @@
 // ChatInput Component - Message input with send button
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { FormEvent, KeyboardEvent, ChangeEvent } from 'react';
-import { uploadService } from '../../../services/api/uploadService';
-import type { UploadProgress } from '../../../services/api/uploadService';
+import { uploadService, type UploadProgress, type UploadResult } from '../../../services/api/uploadService';
+import type { MediaItem } from '../../../types/chat.types';
 import { EmojiPicker } from './EmojiPicker';
 import { VoiceRecorder } from './VoiceRecorder';
 import { LocationPicker } from './LocationPicker';
@@ -17,6 +17,7 @@ interface ChatInputProps {
         duration?: number;
         thumbnailUrl?: string;
     }) => void;
+    onSendMediaGroup?: (mediaItems: MediaItem[]) => void;
     onSendVoice?: (audioBlob: Blob, duration: number) => void;
     onSendLocation?: (location: {
         latitude: number;
@@ -26,6 +27,7 @@ interface ChatInputProps {
     }) => void;
     onSendFile?: (fileUrl: string, fileName: string, fileSize: number, fileType: string) => void;
     disabled?: boolean;
+    onUploadingFilesChange?: (files: UploadingFile[]) => void;
 }
 
 interface UploadingFile {
@@ -36,7 +38,7 @@ interface UploadingFile {
     type: 'image' | 'video' | 'file';
 }
 
-export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, onSendFile, disabled }: ChatInputProps) {
+export function ChatInput({ onSend, onSendMedia, onSendMediaGroup, onSendVoice, onSendLocation, onSendFile, disabled, onUploadingFilesChange }: ChatInputProps) {
     const [message, setMessage] = useState('');
     const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -44,6 +46,13 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
     const [showLocationPicker, setShowLocationPicker] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // Sync uploadingFiles with parent
+    useEffect(() => {
+        if (onUploadingFilesChange) {
+            onUploadingFilesChange(uploadingFiles);
+        }
+    }, [uploadingFiles, onUploadingFilesChange]);
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
@@ -74,107 +83,138 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
     };
 
     const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
 
-        // Determine file type
-        const isImage = file.type.startsWith('image/');
-        const isVideo = file.type.startsWith('video/');
-        const fileType = isImage ? 'image' : isVideo ? 'video' : 'file';
+        // Validate total number of files (max 10 at once)
+        if (files.length > 10) {
+            alert('You can only upload up to 10 files at once');
+            if (e.target) e.target.value = '';
+            return;
+        }
+
+        // Process each file
+        const newUploadingFiles: UploadingFile[] = files.map((file, index) => {
+            const isImage = file.type.startsWith('image/');
+            const isVideo = file.type.startsWith('video/');
+            const fileType = isImage ? 'image' : isVideo ? 'video' : 'file';
+            const preview = isImage || isVideo ? URL.createObjectURL(file) : '';
+            const fileId = `${Date.now()}-${index}-${Math.random()}`;
+
+            return {
+                id: fileId,
+                file,
+                preview,
+                progress: 0,
+                type: fileType,
+            };
+        });
         
-        // Create preview URL
-        const preview = isImage || isVideo ? URL.createObjectURL(file) : '';
-        
-        // Generate unique ID
-        const fileId = `${Date.now()}-${Math.random()}`;
-        
-        // Add to uploading files
-        const uploadingFile: UploadingFile = {
-            id: fileId,
-            file,
-            preview,
-            progress: 0,
-            type: fileType,
-        };
-        
-        setUploadingFiles(prev => [...prev, uploadingFile]);
+        // Add all files to uploading state
+        setUploadingFiles(prev => [...prev, ...newUploadingFiles]);
+
+        // Upload all files and collect results
+        const uploadResults = await Promise.allSettled(
+            newUploadingFiles.map(uploadingFile => 
+                uploadSingleFileWithoutSending(uploadingFile)
+            )
+        );
+
+        // Separate successful uploads by type
+        const successfulUploads = uploadResults
+            .map((result, index) => ({
+                result,
+                uploadingFile: newUploadingFiles[index]
+            }))
+            .filter(({ result }) => result.status === 'fulfilled')
+            .map(({ result, uploadingFile }) => ({
+                uploadResult: (result as PromiseFulfilledResult<UploadResult>).value,
+                fileType: uploadingFile.type
+            }));
+
+        // Group media files (images + videos) together
+        const mediaUploads = successfulUploads.filter(u => u.fileType === 'image' || u.fileType === 'video');
+        const documentUploads = successfulUploads.filter(u => u.fileType === 'file');
+
+        // Send media as grouped message if there are multiple
+        if (mediaUploads.length > 0) {
+            if (mediaUploads.length === 1 && onSendMedia) {
+                // Single media - send normally
+                const { uploadResult, fileType } = mediaUploads[0];
+                onSendMedia(uploadResult.secureUrl, fileType as 'image' | 'video', {
+                    publicId: uploadResult.publicId,
+                    width: uploadResult.width,
+                    height: uploadResult.height,
+                    duration: uploadResult.duration,
+                    thumbnailUrl: uploadResult.thumbnailUrl,
+                });
+            } else if (mediaUploads.length > 1 && onSendMediaGroup) {
+                // Multiple media - send as grouped message
+                onSendMediaGroup(mediaUploads.map(({ uploadResult, fileType }) => ({
+                    url: uploadResult.secureUrl,
+                    type: fileType as 'image' | 'video',
+                    publicId: uploadResult.publicId,
+                    width: uploadResult.width,
+                    height: uploadResult.height,
+                    duration: uploadResult.duration,
+                    thumbnailUrl: uploadResult.thumbnailUrl,
+                })));
+            }
+        }
+
+        // Send document files separately
+        if (documentUploads.length > 0 && onSendFile) {
+            for (const { uploadResult } of documentUploads) {
+                const originalFile = newUploadingFiles.find(f => f.preview === '' && f.type === 'file')?.file;
+                if (originalFile) {
+                    onSendFile(uploadResult.secureUrl, originalFile.name, originalFile.size, originalFile.type);
+                }
+            }
+        }
+
+        // Reset input
+        if (e.target) e.target.value = '';
+    };
+
+    const uploadSingleFileWithoutSending = async (uploadingFile: UploadingFile) => {
+        const { id: fileId, file, preview, type: fileType } = uploadingFile;
+        const isImage = fileType === 'image';
+        const isVideo = fileType === 'video';
 
         try {
-            if (isImage && onSendMedia) {
-                // Handle image
-                const result = await uploadService.upload(
-                    file,
-                    'chat_image',
-                    '/chat',
-                    (progress: UploadProgress) => {
-                        setUploadingFiles(prev => prev.map(f => 
-                            f.id === fileId ? { ...f, progress: progress.percentage } : f
-                        ));
-                    }
-                );
+            let uploadType: 'chat_image' | 'chat_video' | 'chat_document' = 'chat_image';
+            if (isImage) uploadType = 'chat_image';
+            else if (isVideo) uploadType = 'chat_video';
+            else uploadType = 'chat_document';
 
-                // Remove from uploading and send
-                setUploadingFiles(prev => prev.filter(f => f.id !== fileId));
-                URL.revokeObjectURL(preview);
-                
-                onSendMedia(result.secureUrl, 'image', {
-                    publicId: result.publicId,
-                    width: result.width,
-                    height: result.height,
-                    thumbnailUrl: result.thumbnailUrl,
-                });
-            } else if (isVideo && onSendMedia) {
-                // Handle video
-                const result = await uploadService.upload(
-                    file,
-                    'chat_video',
-                    '/chat',
-                    (progress: UploadProgress) => {
-                        setUploadingFiles(prev => prev.map(f => 
-                            f.id === fileId ? { ...f, progress: progress.percentage } : f
-                        ));
-                    }
-                );
+            const result = await uploadService.upload(
+                file,
+                uploadType,
+                '/chat',
+                (progress: UploadProgress) => {
+                    setUploadingFiles(prev => prev.map(f => 
+                        f.id === fileId ? { ...f, progress: progress.percentage } : f
+                    ));
+                }
+            );
 
-                // Remove from uploading and send
-                setUploadingFiles(prev => prev.filter(f => f.id !== fileId));
-                URL.revokeObjectURL(preview);
-                
-                onSendMedia(result.secureUrl, 'video', {
-                    publicId: result.publicId,
-                    width: result.width,
-                    height: result.height,
-                    duration: result.duration,
-                    thumbnailUrl: result.thumbnailUrl,
-                });
-            } else if (onSendFile) {
-                // Handle document files
-                const result = await uploadService.upload(
-                    file,
-                    'chat_image',
-                    '/chat',
-                    (progress: UploadProgress) => {
-                        setUploadingFiles(prev => prev.map(f => 
-                            f.id === fileId ? { ...f, progress: progress.percentage } : f
-                        ));
-                    }
-                );
+            // Remove from uploading list
+            setUploadingFiles(prev => prev.filter(f => f.id !== fileId));
+            if (preview) URL.revokeObjectURL(preview);
 
-                // Remove from uploading and send
-                setUploadingFiles(prev => prev.filter(f => f.id !== fileId));
-                
-                onSendFile(result.secureUrl, file.name, file.size, file.type);
-            }
-
-            // Reset input
-            if (e.target) e.target.value = '';
+            return result;
         } catch (error) {
             console.error('Failed to upload file:', error);
-            alert(error instanceof Error ? error.message : 'Failed to upload file');
             
             // Remove from uploading on error
             setUploadingFiles(prev => prev.filter(f => f.id !== fileId));
             if (preview) URL.revokeObjectURL(preview);
+            
+            // Show error for this specific file
+            const fileName = file.name.length > 20 ? file.name.substring(0, 20) + '...' : file.name;
+            alert(`Failed to upload "${fileName}": ${error instanceof Error ? error.message : 'Unknown error'}`);
+            
+            throw error;
         }
     };
 
@@ -219,108 +259,121 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
 
             {/* Uploading Files Preview */}
             {uploadingFiles.length > 0 && (
-                <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
-                    <div className="flex flex-wrap gap-2">
-                        {uploadingFiles.map((uploadingFile) => (
-                            <div key={uploadingFile.id} className="relative">
-                                {/* Image/Video Preview */}
-                                {(uploadingFile.type === 'image' || uploadingFile.type === 'video') && (
-                                    <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-gray-200">
-                                        {uploadingFile.type === 'image' ? (
-                                            <img 
-                                                src={uploadingFile.preview} 
-                                                alt="Uploading" 
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            <video 
-                                                src={uploadingFile.preview} 
-                                                className="w-full h-full object-cover"
-                                            />
-                                        )}
-                                        
-                                        {/* Circular Progress Overlay */}
-                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                            <div className="relative w-12 h-12">
-                                                {/* Background Circle */}
-                                                <svg className="w-12 h-12 transform -rotate-90">
-                                                    <circle
-                                                        cx="24"
-                                                        cy="24"
-                                                        r="20"
-                                                        stroke="rgba(255,255,255,0.3)"
-                                                        strokeWidth="3"
-                                                        fill="none"
-                                                    />
-                                                    {/* Progress Circle */}
-                                                    <circle
-                                                        cx="24"
-                                                        cy="24"
-                                                        r="20"
-                                                        stroke="white"
-                                                        strokeWidth="3"
-                                                        fill="none"
-                                                        strokeDasharray={`${2 * Math.PI * 20}`}
-                                                        strokeDashoffset={`${2 * Math.PI * 20 * (1 - uploadingFile.progress / 100)}`}
-                                                        className="transition-all duration-300"
-                                                    />
-                                                </svg>
-                                                {/* Percentage Text */}
-                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                    <span className="text-white text-xs font-semibold">
-                                                        {uploadingFile.progress}%
+                <div className="border-t border-gray-200 px-4 py-3 bg-gray-50">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="text-sm font-medium text-gray-700">
+                            Uploading {uploadingFiles.length} file{uploadingFiles.length > 1 ? 's' : ''}...
+                        </span>
+                    </div>
+                    
+                    {/* Separate media (images/videos) from documents */}
+                    {(() => {
+                        const mediaFiles = uploadingFiles.filter(f => f.type === 'image' || f.type === 'video');
+                        const documentFiles = uploadingFiles.filter(f => f.type === 'file');
+                        
+                        return (
+                            <div className="space-y-2">
+                                {/* Media Grid (max 3 per row) */}
+                                {mediaFiles.length > 0 && (
+                                    <div className={`grid gap-2 ${
+                                        mediaFiles.length === 1 ? 'grid-cols-1 max-w-[200px]' :
+                                        mediaFiles.length === 2 ? 'grid-cols-2 max-w-[400px]' :
+                                        'grid-cols-3 max-w-[600px]'
+                                    }`}>
+                                        {mediaFiles.map((uploadFile) => (
+                                            <div key={uploadFile.id} className="relative">
+                                                <div className="aspect-square rounded-lg overflow-hidden bg-gray-200 relative">
+                                                    {/* Preview Image/Video */}
+                                                    {uploadFile.type === 'video' ? (
+                                                        <>
+                                                            <video
+                                                                src={uploadFile.preview}
+                                                                className="w-full h-full object-cover"
+                                                                muted
+                                                            />
+                                                            {/* Video play icon */}
+                                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                                <div className="w-10 h-10 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                                                                    <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                                                        <path d="M8 5v14l11-7z" />
+                                                                    </svg>
+                                                                </div>
+                                                            </div>
+                                                        </>
+                                                    ) : (
+                                                        <img
+                                                            src={uploadFile.preview}
+                                                            alt={uploadFile.file.name}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    )}
+
+                                                    {/* Progress Overlay */}
+                                                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                                        <div className="text-center">
+                                                            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-1" />
+                                                            <span className="text-xs text-white font-medium">{uploadFile.progress}%</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* File Type Badge */}
+                                                    <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-black bg-opacity-60 rounded text-white text-xs uppercase">
+                                                        {uploadFile.type}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                
+                                {/* Document Files (separate rows) */}
+                                {documentFiles.length > 0 && (
+                                    <div className="space-y-2">
+                                        {documentFiles.map((uploadFile) => (
+                                            <div key={uploadFile.id} className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
+                                                <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                                    </svg>
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-sm font-medium text-gray-900 truncate">
+                                                        {uploadFile.file.name}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500">
+                                                        {(uploadFile.file.size / (1024 * 1024)).toFixed(1)} MB
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                    <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                                        <div 
+                                                            className="h-full bg-blue-600 transition-all"
+                                                            style={{ width: `${uploadFile.progress}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-xs text-gray-600 font-medium w-10 text-right">
+                                                        {uploadFile.progress}%
                                                     </span>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* File Preview */}
-                                {uploadingFile.type === 'file' && (
-                                    <div className="relative w-48 px-4 py-3 rounded-lg bg-white border border-gray-200">
-                                        <div className="flex items-center gap-3">
-                                            {/* File Icon */}
-                                            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
-                                                <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                                                </svg>
-                                            </div>
-                                            
-                                            {/* File Info */}
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-gray-900 truncate">
-                                                    {uploadingFile.file.name}
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                    {uploadingFile.progress}%
-                                                </p>
-                                            </div>
-                                        </div>
-                                        
-                                        {/* Linear Progress Bar */}
-                                        <div className="mt-2 bg-gray-200 rounded-full h-1.5 overflow-hidden">
-                                            <div
-                                                className="bg-blue-600 h-full transition-all duration-300"
-                                                style={{ width: `${uploadingFile.progress}%` }}
-                                            />
-                                        </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>
-                        ))}
-                    </div>
+                        );
+                    })()}
                 </div>
             )}
 
             <form onSubmit={handleSubmit} className="border-t border-gray-200 px-4 py-3 bg-white">
 
             <div className="flex items-center gap-3">
-                {/* Hidden file input for all file types */}
+                {/* Hidden file input for all file types - supports multiple selection */}
                 <input
                     ref={fileInputRef}
                     type="file"
                     accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.7z"
+                    multiple
                     className="hidden"
                     onChange={handleFileSelect}
                     disabled={disabled || uploadingFiles.length > 0}
@@ -330,7 +383,7 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, on
                 <button
                     type="button"
                     className="text-blue-600 hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5"
-                    title="Add photo, video or file"
+                    title="Add photos, videos or files (max 10 at once)"
                     disabled={disabled || uploadingFiles.length > 0}
                     onClick={() => fileInputRef.current?.click()}
                 >

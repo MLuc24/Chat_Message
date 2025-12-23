@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { StorageService } from '../storage/storage.service';
 import { SendMessageDto, UpdateMessageDto } from './dto';
+import { Prisma } from '.prisma/client';
 
 @Injectable()
 export class MessageService {
@@ -63,24 +64,37 @@ export class MessageService {
   async sendMessage(conversationId: string, userId: string, sendDto: SendMessageDto) {
     await this.checkMembership(conversationId, userId);
 
+    // Validate media_group type requirements
+    if (sendDto.type === 'media_group') {
+      if (!sendDto.mediaItems || sendDto.mediaItems.length === 0) {
+        throw new BadRequestException('media_group type requires at least one media item');
+      }
+      if (sendDto.mediaItems.length > 10) {
+        throw new BadRequestException('Maximum 10 media items allowed');
+      }
+    }
+
+    const messageData = {
+      conversationId,
+      senderId: userId,
+      type: sendDto.type,
+      text: sendDto.text,
+      mediaUrl: sendDto.mediaUrl,
+      mediaPublicId: sendDto.mediaPublicId,
+      thumbnailUrl: sendDto.thumbnailUrl,
+      mediaWidth: sendDto.mediaWidth,
+      mediaHeight: sendDto.mediaHeight,
+      mediaDuration: sendDto.mediaDuration,
+      mediaItems: (sendDto.mediaItems as unknown as Prisma.InputJsonValue) || undefined,
+      location: (sendDto.location as unknown as Prisma.InputJsonValue) || undefined,
+      fileUrl: sendDto.fileUrl,
+      fileName: sendDto.fileName,
+      fileSize: sendDto.fileSize,
+      fileType: sendDto.fileType,
+    } as Prisma.MessageUncheckedCreateInput;
+
     const message = await this.prisma.message.create({
-      data: {
-        conversationId,
-        senderId: userId,
-        type: sendDto.type,
-        text: sendDto.text,
-        mediaUrl: sendDto.mediaUrl,
-        mediaPublicId: sendDto.mediaPublicId,
-        thumbnailUrl: sendDto.thumbnailUrl,
-        mediaWidth: sendDto.mediaWidth,
-        mediaHeight: sendDto.mediaHeight,
-        mediaDuration: sendDto.mediaDuration,
-        location: sendDto.location as any,
-        fileUrl: sendDto.fileUrl,
-        fileName: sendDto.fileName,
-        fileSize: sendDto.fileSize,
-        fileType: sendDto.fileType,
-      },
+      data: messageData,
       include: {
         statuses: true,
       },
@@ -290,11 +304,14 @@ export class MessageService {
     // Check membership
     await this.checkMembership(conversationId, userId);
 
-    // Get all media messages (images and videos)
+    // Get all media messages (images, videos, and media groups)
     const mediaMessages = await this.prisma.message.findMany({
       where: {
         conversationId,
-        type: { in: ['image', 'video'] },
+        OR: [
+          { type: { in: ['image', 'video'] } },
+          { type: 'media_group' },
+        ],
         isDeleted: false,
       },
       orderBy: { createdAt: 'desc' },

@@ -2,12 +2,22 @@
 
 import type { User } from './user.types';
 
+export interface MediaItem {
+    url: string;
+    type: 'image' | 'video';
+    publicId: string;
+    width?: number;
+    height?: number;
+    duration?: number; // For videos (in seconds)
+    thumbnailUrl?: string; // For videos
+}
+
 export interface Message {
     id: string;
     conversationId: string;
     senderId: string;
     text?: string;
-    type: 'text' | 'image' | 'video' | 'file' | 'audio' | 'location';
+    type: 'text' | 'image' | 'video' | 'file' | 'audio' | 'location' | 'media_group';
     
     // Media fields (for images/videos uploaded to Cloudinary)
     mediaUrl?: string;
@@ -16,6 +26,9 @@ export interface Message {
     mediaWidth?: number;
     mediaHeight?: number;
     mediaDuration?: number; // For videos/audio (in seconds)
+    
+    // Grouped media (for media_group messages)
+    mediaItems?: MediaItem[];
     
     // Location fields (for location messages)
     location?: {
@@ -60,7 +73,7 @@ export interface Conversation {
 export interface SendMessageDto {
     conversationId: string;
     text?: string;
-    type: 'text' | 'image' | 'video' | 'file' | 'audio' | 'location';
+    type: 'text' | 'image' | 'video' | 'file' | 'audio' | 'location' | 'media_group';
     
     // Media fields (for Cloudinary uploads)
     mediaUrl?: string;
@@ -69,6 +82,9 @@ export interface SendMessageDto {
     mediaWidth?: number;
     mediaHeight?: number;
     mediaDuration?: number;
+    
+    // Grouped media (for media_group messages)
+    mediaItems?: MediaItem[];
     
     // Location fields
     location?: {

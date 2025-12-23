@@ -19,7 +19,7 @@ export const UserProfile = memo(function UserProfile({
             {/* Avatar */}
             <div className="flex flex-col items-center mb-6">
                 <Avatar
-                    src={user.avatar}
+                    src={user.avatarUrl}
                     alt={user.name}
                     name={user.name}
                     size="xl"

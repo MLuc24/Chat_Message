@@ -9,9 +9,11 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { RedisService } from '../redis/redis.service';
+import { DirectCallHandler } from './direct-call.handler';
+import { GroupCallHandler } from './group-call.handler';
 import * as jwt from 'jsonwebtoken';
 
-interface AuthenticatedSocket extends Socket {
+export interface AuthenticatedSocket extends Socket {
   userId?: string;
   userEmail?: string;
 }
@@ -27,6 +29,8 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   private authenticatedSockets = new Map<string, AuthenticatedSocket>();
+  private directCallHandler: DirectCallHandler;
+  private groupCallHandler: GroupCallHandler;
 
   constructor(private readonly redis: RedisService) {
     // Register message handler for Redis pub/sub
@@ -40,6 +44,12 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
+  afterInit() {
+    // Initialize call handlers after server is ready
+    this.directCallHandler = new DirectCallHandler(this.server, this.redis);
+    this.groupCallHandler = new GroupCallHandler(this.server, this.redis);
+  }
+
   async handleConnection(client: AuthenticatedSocket) {
     console.log(`Client connecting: ${client.id}`);
   }
@@ -48,6 +58,11 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(`Client disconnected: ${client.id}`);
 
     if (client.userId) {
+      // Handle group call cleanup
+      if (this.groupCallHandler) {
+        await this.groupCallHandler.handleUserDisconnect(client.userId);
+      }
+
       // Leave all rooms
       const rooms = Array.from(client.rooms);
       rooms.forEach((room) => {
@@ -245,34 +260,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       conversationId: string;
     },
   ) {
-    if (!client.userId) {
-      client.emit('error', { message: 'Not authenticated' });
-      return;
-    }
-
-    const { targetUserId, offer, conversationId } = data;
-
-    // Get target user's socket ID from Redis
-    const targetSocketId = await this.redis.getSocketId(targetUserId);
-    
-    if (!targetSocketId) {
-      client.emit('voice_call_failed', { 
-        reason: 'User is offline',
-        targetUserId 
-      });
-      return;
-    }
-
-    // Forward offer to target user
-    this.server.to(targetSocketId).emit('voice_call_incoming', {
-      callerId: client.userId,
-      callerEmail: client.userEmail,
-      offer,
-      conversationId,
-      timestamp: new Date(),
-    });
-
-    console.log(`📞 Voice call offer from ${client.userId} to ${targetUserId}`);
+    await this.directCallHandler.handleVoiceCallOffer(client, data);
   }
 
   @SubscribeMessage('voice_call_answer')
@@ -283,26 +271,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       answer: RTCSessionDescriptionInit;
     },
   ) {
-    if (!client.userId) return;
-
-    const { callerId, answer } = data;
-
-    // Get caller's socket ID
-    const callerSocketId = await this.redis.getSocketId(callerId);
-    
-    if (!callerSocketId) {
-      client.emit('voice_call_failed', { reason: 'Caller disconnected' });
-      return;
-    }
-
-    // Forward answer to caller
-    this.server.to(callerSocketId).emit('voice_call_answered', {
-      answer,
-      answeredBy: client.userId,
-      timestamp: new Date(),
-    });
-
-    console.log(`✅ Voice call answered by ${client.userId} to ${callerId}`);
+    await this.directCallHandler.handleVoiceCallAnswer(client, data);
   }
 
   @SubscribeMessage('voice_call_ice_candidate')
@@ -313,19 +282,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       candidate: RTCIceCandidateInit;
     },
   ) {
-    if (!client.userId) return;
-
-    const { targetUserId, candidate } = data;
-
-    // Get target user's socket ID
-    const targetSocketId = await this.redis.getSocketId(targetUserId);
-    
-    if (targetSocketId) {
-      this.server.to(targetSocketId).emit('voice_call_ice_candidate', {
-        candidate,
-        fromUserId: client.userId,
-      });
-    }
+    await this.directCallHandler.handleVoiceCallIceCandidate(client, data);
   }
 
   @SubscribeMessage('voice_call_reject')
@@ -333,22 +290,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { callerId: string; reason?: string },
   ) {
-    if (!client.userId) return;
-
-    const { callerId, reason } = data;
-
-    // Get caller's socket ID
-    const callerSocketId = await this.redis.getSocketId(callerId);
-    
-    if (callerSocketId) {
-      this.server.to(callerSocketId).emit('voice_call_rejected', {
-        rejectedBy: client.userId,
-        reason: reason || 'Call declined',
-        timestamp: new Date(),
-      });
-    }
-
-    console.log(`❌ Voice call rejected by ${client.userId}`);
+    await this.directCallHandler.handleVoiceCallReject(client, data);
   }
 
   @SubscribeMessage('voice_call_end')
@@ -356,22 +298,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { targetUserId: string; duration?: number },
   ) {
-    if (!client.userId) return;
-
-    const { targetUserId, duration } = data;
-
-    // Get target user's socket ID
-    const targetSocketId = await this.redis.getSocketId(targetUserId);
-    
-    if (targetSocketId) {
-      this.server.to(targetSocketId).emit('voice_call_ended', {
-        endedBy: client.userId,
-        duration,
-        timestamp: new Date(),
-      });
-    }
-
-    console.log(`📞 Voice call ended by ${client.userId}, duration: ${duration}s`);
+    await this.directCallHandler.handleVoiceCallEnd(client, data);
   }
 
   // ==================== Video Call Signaling ====================
@@ -387,40 +314,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       hasAudio: boolean;
     },
   ) {
-    if (!client.userId) {
-      client.emit('error', { message: 'Not authenticated' });
-      return;
-    }
-
-    const { targetUserId, offer, conversationId, hasVideo, hasAudio } = data;
-
-    // Get target user's socket ID from Redis
-    const targetSocketId = await this.redis.getSocketId(targetUserId);
-    
-    if (!targetSocketId) {
-      client.emit('video_call_failed', { 
-        reason: 'User is offline',
-        targetUserId 
-      });
-      return;
-    }
-
-    // Get caller's name from authenticated socket
-    const callerName = client.userEmail?.split('@')[0] || 'Unknown';
-
-    // Forward offer to target user
-    this.server.to(targetSocketId).emit('video_call_offer', {
-      callerId: client.userId,
-      callerEmail: client.userEmail,
-      callerName,
-      offer,
-      conversationId,
-      hasVideo,
-      hasAudio,
-      timestamp: new Date(),
-    });
-
-    console.log(`📹 Video call offer from ${client.userId} to ${targetUserId}`);
+    await this.directCallHandler.handleVideoCallOffer(client, data);
   }
 
   @SubscribeMessage('video_call_answer')
@@ -433,28 +327,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       hasAudio: boolean;
     },
   ) {
-    if (!client.userId) return;
-
-    const { callerId, answer, hasVideo, hasAudio } = data;
-
-    // Get caller's socket ID
-    const callerSocketId = await this.redis.getSocketId(callerId);
-    
-    if (!callerSocketId) {
-      client.emit('video_call_failed', { reason: 'Caller disconnected' });
-      return;
-    }
-
-    // Forward answer to caller
-    this.server.to(callerSocketId).emit('video_call_answer', {
-      answer,
-      answeredBy: client.userId,
-      hasVideo,
-      hasAudio,
-      timestamp: new Date(),
-    });
-
-    console.log(`✅ Video call answered by ${client.userId} to ${callerId}`);
+    await this.directCallHandler.handleVideoCallAnswer(client, data);
   }
 
   @SubscribeMessage('video_call_ice_candidate')
@@ -465,19 +338,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       candidate: RTCIceCandidateInit;
     },
   ) {
-    if (!client.userId) return;
-
-    const { targetUserId, candidate } = data;
-
-    // Get target user's socket ID
-    const targetSocketId = await this.redis.getSocketId(targetUserId);
-    
-    if (targetSocketId) {
-      this.server.to(targetSocketId).emit('video_call_ice_candidate', {
-        candidate,
-        fromUserId: client.userId,
-      });
-    }
+    await this.directCallHandler.handleVideoCallIceCandidate(client, data);
   }
 
   @SubscribeMessage('video_call_reject')
@@ -485,22 +346,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { callerId: string; reason?: string },
   ) {
-    if (!client.userId) return;
-
-    const { callerId, reason } = data;
-
-    // Get caller's socket ID
-    const callerSocketId = await this.redis.getSocketId(callerId);
-    
-    if (callerSocketId) {
-      this.server.to(callerSocketId).emit('video_call_reject', {
-        rejectedBy: client.userId,
-        reason: reason || 'Call declined',
-        timestamp: new Date(),
-      });
-    }
-
-    console.log(`❌ Video call rejected by ${client.userId}`);
+    await this.directCallHandler.handleVideoCallReject(client, data);
   }
 
   @SubscribeMessage('video_call_end')
@@ -508,22 +354,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { targetUserId: string; duration?: number },
   ) {
-    if (!client.userId) return;
-
-    const { targetUserId, duration } = data;
-
-    // Get target user's socket ID
-    const targetSocketId = await this.redis.getSocketId(targetUserId);
-    
-    if (targetSocketId) {
-      this.server.to(targetSocketId).emit('video_call_end', {
-        endedBy: client.userId,
-        duration,
-        timestamp: new Date(),
-      });
-    }
-
-    console.log(`📹 Video call ended by ${client.userId}, duration: ${duration}s`);
+    await this.directCallHandler.handleVideoCallEnd(client, data);
   }
 
   @SubscribeMessage('video_track_control')
@@ -535,22 +366,7 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       enabled: boolean;
     },
   ) {
-    if (!client.userId) return;
-
-    const { targetUserId, trackType, enabled } = data;
-
-    // Get target user's socket ID
-    const targetSocketId = await this.redis.getSocketId(targetUserId);
-    
-    if (targetSocketId) {
-      this.server.to(targetSocketId).emit('video_track_control', {
-        userId: client.userId,
-        trackType,
-        enabled,
-      });
-    }
-
-    console.log(`🎛️ Video track control: ${client.userId} ${trackType} ${enabled ? 'enabled' : 'disabled'}`);
+    await this.directCallHandler.handleVideoTrackControl(client, data);
   }
 
   @SubscribeMessage('screen_share_control')
@@ -561,21 +377,88 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
       isSharing: boolean;
     },
   ) {
-    if (!client.userId) return;
+    await this.directCallHandler.handleScreenShareControl(client, data);
+  }
 
-    const { targetUserId, isSharing } = data;
+  // ==================== Group Call Signaling ====================
 
-    // Get target user's socket ID
-    const targetSocketId = await this.redis.getSocketId(targetUserId);
-    
-    if (targetSocketId) {
-      this.server.to(targetSocketId).emit('screen_share_control', {
-        userId: client.userId,
-        isSharing,
-      });
-    }
+  @SubscribeMessage('group_call_start')
+  async handleGroupCallStart(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: {
+      conversationId: string;
+      conversationName?: string;
+      callType: 'voice' | 'video';
+      participantIds: string[];
+    },
+  ) {
+    await this.groupCallHandler.handleStartGroupCall(client, data);
+  }
 
-    console.log(`🖥️ Screen share: ${client.userId} ${isSharing ? 'started' : 'stopped'}`);
+  @SubscribeMessage('group_call_join')
+  async handleGroupCallJoin(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { callId: string },
+  ) {
+    await this.groupCallHandler.handleJoinGroupCall(client, data);
+  }
+
+  @SubscribeMessage('group_call_leave')
+  async handleGroupCallLeave(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { callId: string; reason?: string },
+  ) {
+    await this.groupCallHandler.handleLeaveGroupCall(client, data);
+  }
+
+  @SubscribeMessage('group_call_signal')
+  async handleGroupCallSignal(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: {
+      callId: string;
+      fromUserId: string;
+      toUserId: string;
+      type: 'offer' | 'answer' | 'ice-candidate';
+      data: RTCSessionDescriptionInit | RTCIceCandidateInit;
+    },
+  ) {
+    await this.groupCallHandler.handleGroupCallSignal(client, data);
+  }
+
+  @SubscribeMessage('group_call_reject')
+  async handleGroupCallReject(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { callId: string; reason?: string },
+  ) {
+    await this.groupCallHandler.handleRejectGroupCall(client, data);
+  }
+
+  @SubscribeMessage('group_call_end')
+  async handleGroupCallEnd(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { callId: string },
+  ) {
+    await this.groupCallHandler.handleEndGroupCall(client, data);
+  }
+
+  @SubscribeMessage('group_call_track_control')
+  async handleGroupCallTrackControl(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: {
+      callId: string;
+      trackType: 'video' | 'audio';
+      enabled: boolean;
+    },
+  ) {
+    await this.groupCallHandler.handleGroupCallTrackControl(client, data);
+  }
+
+  @SubscribeMessage('group_call_screen_share')
+  async handleGroupCallScreenShare(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { callId: string; isSharing: boolean },
+  ) {
+    await this.groupCallHandler.handleGroupCallScreenShare(client, data);
   }
 
   // Method to send message to all participants regardless of which conversation they're viewing

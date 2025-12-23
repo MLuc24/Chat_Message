@@ -221,14 +221,14 @@ class UploadService {
   /**
    * Complete upload flow for Blob (audio): get signature -> upload -> return result
    * @param blob Blob to upload
-   * @param uploadType Upload type (should be 'audio')
+   * @param _uploadType Upload type (should be 'audio')
    * @param serviceUrl Service URL
    * @param onProgress Progress callback
    * @returns Upload result
    */
   async uploadFile(
     blob: Blob,
-    uploadType: 'audio',
+    _uploadType: 'audio',
     serviceUrl: string = '/api/chat',
     onProgress?: (progress: UploadProgress) => void,
   ): Promise<UploadResult> {

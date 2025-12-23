@@ -38,7 +38,6 @@ export const ChatHeader = memo(function ChatHeader({
     onVoiceCall,
     onVideoCall,
     onViewInfo,
-    onViewMembers,
     onLeaveGroup,
 }: ChatHeaderProps) {
     const isGroup = conversation?.type === 'group';
@@ -114,8 +113,8 @@ export const ChatHeader = memo(function ChatHeader({
 
             {/* Action Buttons */}
             <div className="flex items-center gap-1">
-                {/* Voice Call - only for direct chats */}
-                {!isGroup && onVoiceCall && (
+                {/* Voice Call - for both direct chats and groups */}
+                {onVoiceCall && (
                     <button
                         onClick={onVoiceCall}
                         className="p-2.5 text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
@@ -132,8 +131,8 @@ export const ChatHeader = memo(function ChatHeader({
                     </button>
                 )}
 
-                {/* Video Call - only for direct chats */}
-                {!isGroup && onVideoCall && (
+                {/* Video Call - for both direct chats and groups */}
+                {onVideoCall && (
                     <button
                         onClick={onVideoCall}
                         className="p-2.5 text-blue-600 hover:bg-gray-100 rounded-full transition-colors"

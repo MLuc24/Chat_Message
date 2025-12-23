@@ -25,9 +25,11 @@ interface ChatWindowProps {
     conversationId: string | null;
     onStartVoiceCall?: (targetUser: User, conversationId: string) => void;
     onStartVideoCall?: (targetUser: User, conversationId: string) => void;
+    onStartGroupVoiceCall?: (conversationId: string, conversationName: string, participantIds: string[]) => void;
+    onStartGroupVideoCall?: (conversationId: string, conversationName: string, participantIds: string[]) => void;
 }
 
-export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall }: ChatWindowProps) {
+export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall, onStartGroupVoiceCall, onStartGroupVideoCall }: ChatWindowProps) {
     const { currentMessages, sendMessage, isLoading, conversations, fetchConversations } = useChat(conversationId || undefined);
     const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
     const [isMemberListOpen, setIsMemberListOpen] = useState(false);
@@ -72,14 +74,34 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall 
 
     // Handle voice call
     const handleVoiceCall = () => {
-        if (recipient && conversationId && onStartVoiceCall) {
+        if (!conversationId) return;
+        
+        if (currentConversation?.type === 'group') {
+            // Group voice call
+            const participantIds = currentConversation.participants?.map(p => p.id) || [];
+            const conversationName = currentConversation.name || 'Cuộc gọi nhóm';
+            if (onStartGroupVoiceCall) {
+                onStartGroupVoiceCall(conversationId, conversationName, participantIds);
+            }
+        } else if (recipient && onStartVoiceCall) {
+            // Direct voice call
             onStartVoiceCall(recipient, conversationId);
         }
     };
 
     // Handle video call
     const handleVideoCall = () => {
-        if (recipient && conversationId && onStartVideoCall) {
+        if (!conversationId) return;
+        
+        if (currentConversation?.type === 'group') {
+            // Group video call
+            const participantIds = currentConversation.participants?.map(p => p.id) || [];
+            const conversationName = currentConversation.name || 'Cuộc gọi nhóm';
+            if (onStartGroupVideoCall) {
+                onStartGroupVideoCall(conversationId, conversationName, participantIds);
+            }
+        } else if (recipient && onStartVideoCall) {
+            // Direct video call
             onStartVideoCall(recipient, conversationId);
         }
     };

@@ -169,7 +169,6 @@ export function useVoiceCall() {
   const startCall = useCallback(
     async (targetUser: User, conversationId: string) => {
       try {
-
         // Initialize audio stream
         await initializeLocalStream();
 

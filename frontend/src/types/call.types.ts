@@ -179,3 +179,85 @@ export const SCREEN_SHARE_CONSTRAINTS: DisplayMediaStreamOptions = {
   } as MediaTrackConstraints,
   audio: false,
 };
+
+// ==================== Group Call Types ====================
+
+/**
+ * Participant in a group call
+ */
+export interface GroupCallParticipant {
+  odId: string;
+  odName: string;
+  avatarUrl?: string;
+  isConnected: boolean;
+  isMuted: boolean;
+  isCameraOn?: boolean;
+  isScreenSharing?: boolean;
+  stream?: MediaStream;
+}
+
+/**
+ * Group call state
+ */
+export interface GroupCallState {
+  isActive: boolean;
+  isIncoming: boolean;
+  isOutgoing: boolean;
+  isConnected: boolean;
+  callType: CallType;
+  conversationId?: string;
+  conversationName?: string;
+  initiatorId?: string;
+  initiatorName?: string;
+  participants: GroupCallParticipant[];
+  startTime?: Date;
+  duration: number;
+  isMuted: boolean;
+  isCameraOn: boolean;
+  isScreenSharing: boolean;
+  callId?: string;
+}
+
+/**
+ * Group call offer data
+ */
+export interface GroupCallOfferData {
+  callId: string;
+  conversationId: string;
+  conversationName?: string;
+  callType: CallType;
+  initiatorId: string;
+  initiatorName: string;
+  participants: string[];
+  timestamp: Date;
+}
+
+/**
+ * Group call signaling data
+ */
+export interface GroupCallSignal {
+  callId: string;
+  fromUserId: string;
+  toUserId: string;
+  type: 'offer' | 'answer' | 'ice-candidate';
+  data: RTCSessionDescriptionInit | RTCIceCandidateInit;
+}
+
+/**
+ * Group call join data
+ */
+export interface GroupCallJoinData {
+  callId: string;
+  odId: string;
+  odName: string;
+  avatarUrl?: string;
+}
+
+/**
+ * Group call leave data
+ */
+export interface GroupCallLeaveData {
+  callId: string;
+  userId: string;
+  reason?: string;
+}

@@ -21,7 +21,7 @@ export const UserListItem = memo(function UserListItem({
             <div className="flex items-center gap-3 flex-1 min-w-0">
                 {/* Avatar */}
                 <Avatar
-                    src={user.avatar}
+                    src={user.avatarUrl}
                     alt={user.name}
                     name={user.name}
                     size="md"

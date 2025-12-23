@@ -30,7 +30,7 @@ export const OnlineUsers = memo(function OnlineUsers({
                         title={user.name}
                     >
                         <Avatar
-                            src={user.avatar}
+                            src={user.avatarUrl}
                             alt={user.name}
                             name={user.name}
                             size="md"

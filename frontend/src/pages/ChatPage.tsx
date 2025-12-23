@@ -6,8 +6,12 @@ import { ConversationList } from '../components/features/chat/ConversationList';
 import { ChatWindow } from '../components/features/chat/ChatWindow';
 import { VoiceCallModal } from '../components/features/chat/VoiceCallModal';
 import { VideoCallModal } from '../components/features/chat/VideoCallModal';
+import { GroupVoiceCallModal } from '../components/features/chat/GroupVoiceCallModal';
+import { GroupVideoCallModal } from '../components/features/chat/GroupVideoCallModal';
 import { useVoiceCall } from '../hooks/useVoiceCall';
 import { useVideoCall } from '../hooks/useVideoCall';
+import { useGroupVoiceCall } from '../hooks/useGroupVoiceCall';
+import { useGroupVideoCall } from '../hooks/useGroupVideoCall';
 import { useChat } from '../hooks/useChat';
 
 export function ChatPage() {
@@ -25,6 +29,32 @@ export function ChatPage() {
         localStream,
         remoteStream,
     } = useVideoCall();
+    
+    // Group call hooks
+    const {
+        callState: groupVoiceCallState,
+        startCall: startGroupVoiceCall,
+        answerCall: answerGroupVoiceCall,
+        rejectCall: rejectGroupVoiceCall,
+        endCall: endGroupVoiceCall,
+        leaveCall: leaveGroupVoiceCall,
+        toggleMute: toggleGroupVoiceMute,
+    } = useGroupVoiceCall();
+    
+    const {
+        callState: groupVideoCallState,
+        localStream: groupVideoLocalStream,
+        startCall: startGroupVideoCall,
+        answerCall: answerGroupVideoCall,
+        rejectCall: rejectGroupVideoCall,
+        endCall: endGroupVideoCall,
+        leaveCall: leaveGroupVideoCall,
+        toggleMicrophone: toggleGroupVideoMic,
+        toggleCamera: toggleGroupVideoCamera,
+        toggleScreenShare: toggleGroupVideoScreenShare,
+        getParticipantStreams,
+    } = useGroupVideoCall();
+    
     const { conversations } = useChat(activeConversationId || undefined);
 
     // Get the other user in the voice call
@@ -80,6 +110,8 @@ export function ChatPage() {
                         conversationId={activeConversationId}
                         onStartVoiceCall={startCall}
                         onStartVideoCall={startVideoCall}
+                        onStartGroupVoiceCall={startGroupVoiceCall}
+                        onStartGroupVideoCall={startGroupVideoCall}
                     />
                 </div>
             </div>
@@ -118,6 +150,32 @@ export function ChatPage() {
                 onToggleCamera={toggleCamera}
                 onToggleMicrophone={toggleMicrophone}
                 onToggleScreenShare={toggleScreenShare}
+            />
+
+            {/* Group Voice Call Modal */}
+            <GroupVoiceCallModal
+                isOpen={groupVoiceCallState.isActive}
+                callState={groupVoiceCallState}
+                onAnswer={answerGroupVoiceCall}
+                onReject={rejectGroupVoiceCall}
+                onEnd={endGroupVoiceCall}
+                onLeave={leaveGroupVoiceCall}
+                onToggleMute={toggleGroupVoiceMute}
+            />
+
+            {/* Group Video Call Modal */}
+            <GroupVideoCallModal
+                isOpen={groupVideoCallState.isActive}
+                callState={groupVideoCallState}
+                localStream={groupVideoLocalStream}
+                getParticipantStreams={getParticipantStreams}
+                onAnswer={answerGroupVideoCall}
+                onReject={rejectGroupVideoCall}
+                onEnd={endGroupVideoCall}
+                onLeave={leaveGroupVideoCall}
+                onToggleMicrophone={toggleGroupVideoMic}
+                onToggleCamera={toggleGroupVideoCamera}
+                onToggleScreenShare={toggleGroupVideoScreenShare}
             />
         </MainLayout>
     );

@@ -47,7 +47,7 @@ export const UserProfileEdit = memo(function UserProfileEdit({
                 {/* Avatar Preview */}
                 <div className="flex flex-col items-center mb-6">
                     <Avatar
-                        src={user.avatar}
+                        src={user.avatarUrl}
                         alt={name}
                         name={name}
                         size="xl"

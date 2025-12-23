@@ -75,6 +75,7 @@ export class MessageService {
         mediaWidth: sendDto.mediaWidth,
         mediaHeight: sendDto.mediaHeight,
         mediaDuration: sendDto.mediaDuration,
+        location: sendDto.location as any,
       },
       include: {
         statuses: true,

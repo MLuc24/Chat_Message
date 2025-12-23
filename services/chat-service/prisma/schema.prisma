@@ -42,7 +42,7 @@ model Message {
   id             String   @id @default(uuid())
   conversationId String   @map("conversation_id")
   senderId       String   @map("sender_id")
-  type           String   // text, image, video, file, audio
+  type           String   // text, image, video, file, audio, location
   text           String?
   fileUrl        String?  @map("file_url")
   fileName       String?  @map("file_name")
@@ -53,6 +53,7 @@ model Message {
   mediaWidth     Int?     @map("media_width")
   mediaHeight    Int?     @map("media_height")
   mediaDuration  Float?   @map("media_duration")
+  location       Json?    // Location data: { latitude, longitude, accuracy?, address? }
   isEdited       Boolean  @default(false) @map("is_edited")
   isDeleted      Boolean  @default(false) @map("is_deleted")
   createdAt      DateTime @default(now()) @map("created_at")

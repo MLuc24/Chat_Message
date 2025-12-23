@@ -29,49 +29,72 @@ export const LocationPicker = memo(function LocationPicker({ onSend, onCancel }:
       return;
     }
 
+    const handleSuccess = async (position: GeolocationPosition) => {
+      const { latitude, longitude, accuracy } = position.coords;
+      
+      const locationData: LocationData = {
+        latitude,
+        longitude,
+        accuracy,
+      };
+
+      // Try to get address from reverse geocoding (optional)
+      try {
+        const address = await reverseGeocode(latitude, longitude);
+        locationData.address = address;
+      } catch (err) {
+        console.warn('Failed to get address:', err);
+      }
+
+      setLocation(locationData);
+      setIsLoading(false);
+    };
+
+    const handleError = async (err: GeolocationPositionError) => {
+      console.log('Geolocation failed:', err.code);
+
+      let errorMessage = 'Không thể lấy vị trí.';
+      let helpText = '';
+      
+      switch (err.code) {
+        case err.PERMISSION_DENIED:
+          errorMessage = 'Quyền truy cập vị trí bị từ chối';
+          helpText = 'Vui lòng cho phép truy cập vị trí trong cài đặt trình duyệt (biểu tượng khóa/ổ khóa trên thanh địa chỉ)';
+          break;
+        case err.POSITION_UNAVAILABLE:
+          errorMessage = 'Không thể xác định vị trí';
+          helpText = 'Vui lòng kiểm tra: 1) GPS/Location đã bật chưa, 2) Có kết nối internet không, 3) Thử ra ngoài trời nếu đang ở trong nhà';
+          break;
+        case err.TIMEOUT:
+          errorMessage = 'Hết thời gian chờ lấy vị trí';
+          helpText = 'GPS đang mất nhiều thời gian. Vui lòng: 1) Ra ngoài trời hoặc gần cửa sổ, 2) Bật GPS/Location trên thiết bị, 3) Thử lại';
+          break;
+      }
+      
+      setError(errorMessage + (helpText ? '\n\n' + helpText : ''));
+      setIsLoading(false);
+    };
+
+    // Thử lấy vị trí với độ chính xác thấp trước (nhanh hơn)
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude, accuracy } = position.coords;
-        
-        const locationData: LocationData = {
-          latitude,
-          longitude,
-          accuracy,
-        };
-
-        // Try to get address from reverse geocoding (optional)
-        try {
-          const address = await reverseGeocode(latitude, longitude);
-          locationData.address = address;
-        } catch (err) {
-          console.warn('Failed to get address:', err);
-        }
-
-        setLocation(locationData);
-        setIsLoading(false);
-      },
-      (err) => {
-        let errorMessage = 'Không thể lấy vị trí.';
-        
-        switch (err.code) {
-          case err.PERMISSION_DENIED:
-            errorMessage = 'Bạn đã từ chối quyền truy cập vị trí.';
-            break;
-          case err.POSITION_UNAVAILABLE:
-            errorMessage = 'Thông tin vị trí không khả dụng.';
-            break;
-          case err.TIMEOUT:
-            errorMessage = 'Yêu cầu lấy vị trí đã hết thời gian.';
-            break;
-        }
-        
-        setError(errorMessage);
-        setIsLoading(false);
+      handleSuccess,
+      () => {
+        // Nếu thất bại với độ chính xác thấp, thử với độ chính xác cao
+        console.log('Low accuracy failed, trying high accuracy...');
+        navigator.geolocation.getCurrentPosition(
+          handleSuccess,
+          handleError,
+          {
+            enableHighAccuracy: true,
+            timeout: 60000, // 60 giây cho high accuracy
+            maximumAge: 60000, // Cho phép cache 1 phút
+          }
+        );
       },
       {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
+        enableHighAccuracy: false, // Thử low accuracy trước
+        timeout: 15000, // 15 giây
+        maximumAge: 300000, // Cho phép cache 5 phút
       }
     );
   };

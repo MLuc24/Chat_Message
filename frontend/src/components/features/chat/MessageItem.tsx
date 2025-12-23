@@ -33,64 +33,128 @@ function formatFileSize(bytes: number): string {
 function getFileIcon(fileName: string, fileType: string) {
     const ext = fileName.split('.').pop()?.toLowerCase();
     
-    // PDF
+    // PDF - Red with document lines
     if (ext === 'pdf' || fileType.includes('pdf')) {
         return (
-            <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+            <svg className="w-7 h-7 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                <path d="M14 2v6h6M9 13h6M9 17h6M9 9h1" fill="white"/>
             </svg>
         );
     }
     
-    // Word
+    // Word - Blue with 'W'
     if (['doc', 'docx'].includes(ext || '') || fileType.includes('word')) {
         return (
-            <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+            <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="#2B579A"/>
+                <path d="M14 2v6h6" fill="#2B579A" opacity="0.7"/>
+                <text x="12" y="17" fontSize="10" fontWeight="bold" fill="white" textAnchor="middle">W</text>
             </svg>
         );
     }
     
-    // Excel
-    if (['xls', 'xlsx'].includes(ext || '') || fileType.includes('excel') || fileType.includes('spreadsheet')) {
+    // Excel - Green with 'X'
+    if (['xls', 'xlsx', 'csv'].includes(ext || '') || fileType.includes('excel') || fileType.includes('spreadsheet')) {
         return (
-            <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+            <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="#217346"/>
+                <path d="M14 2v6h6" fill="#217346" opacity="0.7"/>
+                <text x="12" y="17" fontSize="10" fontWeight="bold" fill="white" textAnchor="middle">X</text>
             </svg>
         );
     }
     
-    // PowerPoint
+    // PowerPoint - Orange with 'P'
     if (['ppt', 'pptx'].includes(ext || '') || fileType.includes('presentation')) {
         return (
-            <svg className="w-6 h-6 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+            <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="#D24726"/>
+                <path d="M14 2v6h6" fill="#D24726" opacity="0.7"/>
+                <text x="12" y="17" fontSize="10" fontWeight="bold" fill="white" textAnchor="middle">P</text>
             </svg>
         );
     }
     
-    // Archive
-    if (['zip', 'rar', '7z'].includes(ext || '') || fileType.includes('zip') || fileType.includes('compressed')) {
+    // Archive - Purple with zipper
+    if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext || '') || fileType.includes('zip') || fileType.includes('compressed')) {
         return (
-            <svg className="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2h-1v1a1 1 0 11-2 0V3H9v1a1 1 0 01-2 0V3H4z" />
+            <svg className="w-7 h-7 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                <rect x="10" y="4" width="4" height="2" fill="white"/>
+                <rect x="10" y="7" width="4" height="2" fill="white"/>
+                <rect x="10" y="10" width="4" height="2" fill="white"/>
+                <circle cx="12" cy="15" r="2" fill="white"/>
             </svg>
         );
     }
     
-    // Text
-    if (ext === 'txt' || fileType.includes('text')) {
+    // Code files - Dark blue
+    if (['js', 'jsx', 'ts', 'tsx', 'py', 'java', 'cpp', 'c', 'cs', 'php', 'rb', 'go', 'rs', 'swift'].includes(ext || '')) {
         return (
-            <svg className="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+            <svg className="w-7 h-7 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                <path d="M9 13l2 2-2 2M13 13l2 2-2 2" stroke="white" strokeWidth="1.5" fill="none"/>
             </svg>
         );
     }
     
-    // Default file icon
+    // Image files - Pink
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(ext || '') || fileType.includes('image')) {
+        return (
+            <svg className="w-7 h-7 text-pink-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                <circle cx="10" cy="11" r="2" fill="white"/>
+                <path d="M6 18l4-4 3 3 5-5v6H6z" fill="white"/>
+            </svg>
+        );
+    }
+    
+    // Video files - Red
+    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm'].includes(ext || '') || fileType.includes('video')) {
+        return (
+            <svg className="w-7 h-7 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                <path d="M10 10l6 4-6 4V10z" fill="white"/>
+            </svg>
+        );
+    }
+    
+    // Audio files - Teal
+    if (['mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac'].includes(ext || '') || fileType.includes('audio')) {
+        return (
+            <svg className="w-7 h-7 text-teal-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                <path d="M15 11v6a2 2 0 1 1-2-2V9l4-1v3h-2z" fill="white"/>
+            </svg>
+        );
+    }
+    
+    // Text files - Gray
+    if (['txt', 'md', 'log'].includes(ext || '') || fileType.includes('text')) {
+        return (
+            <svg className="w-7 h-7 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                <path d="M8 12h8M8 16h8M8 8h2" stroke="white" strokeWidth="1.5"/>
+            </svg>
+        );
+    }
+    
+    // JSON/XML - Yellow
+    if (['json', 'xml', 'yaml', 'yml'].includes(ext || '')) {
+        return (
+            <svg className="w-7 h-7 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+                <path d="M8 10h8M10 13h6M8 16h8" stroke="white" strokeWidth="1.5"/>
+            </svg>
+        );
+    }
+    
+    // Default file icon - Gray
     return (
-        <svg className="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+        <svg className="w-7 h-7 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+            <path d="M14 2v6h6" fill="currentColor" opacity="0.5"/>
         </svg>
     );
 }

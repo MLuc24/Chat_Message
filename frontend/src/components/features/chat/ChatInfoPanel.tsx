@@ -139,9 +139,28 @@ export function ChatInfoPanel({
     const getFileIcon = (fileName?: string) => {
         if (!fileName) return '📄';
         const ext = fileName.split('.').pop()?.toLowerCase();
+        
+        // Microsoft Office
         if (ext === 'pdf') return '📕';
         if (['doc', 'docx'].includes(ext || '')) return '📘';
-        if (['xls', 'xlsx'].includes(ext || '')) return '📗';
+        if (['xls', 'xlsx', 'csv'].includes(ext || '')) return '📗';
+        if (['ppt', 'pptx'].includes(ext || '')) return '📙';
+        
+        // Archives
+        if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext || '')) return '🗜️';
+        
+        // Code
+        if (['js', 'jsx', 'ts', 'tsx', 'py', 'java', 'cpp', 'c', 'cs', 'php', 'rb', 'go', 'rs', 'swift'].includes(ext || '')) return '💻';
+        
+        // Media
+        if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(ext || '')) return '🖼️';
+        if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm'].includes(ext || '')) return '🎬';
+        if (['mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac'].includes(ext || '')) return '🎵';
+        
+        // Text
+        if (['txt', 'md', 'log'].includes(ext || '')) return '📝';
+        if (['json', 'xml', 'yaml', 'yml'].includes(ext || '')) return '📋';
+        
         return '📄';
     };
 

@@ -24,17 +24,18 @@ interface ChatInputProps {
         accuracy?: number;
         address?: string;
     }) => void;
+    onSendFile?: (fileUrl: string, fileName: string, fileSize: number, fileType: string) => void;
     disabled?: boolean;
 }
 
-export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, disabled }: ChatInputProps) {
+export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, onSendFile, disabled }: ChatInputProps) {
     const [message, setMessage] = useState('');
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
     const [showLocationPicker, setShowLocationPicker] = useState(false);
-    const imageInputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const handleSubmit = (e: FormEvent) => {
@@ -48,7 +49,8 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, di
     const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            handleSubmit(e as any);
+            const submitEvent = e as unknown as FormEvent;
+            handleSubmit(submitEvent);
         }
     };
 
@@ -64,33 +66,66 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, di
         }, 0);
     };
 
-    const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>, type: 'image' | 'video') => {
+    const handleFileSelect = async (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file || !onSendMedia) return;
+        if (!file) return;
 
         try {
             setIsUploading(true);
             setUploadProgress(0);
 
-            const uploadType = type === 'image' ? 'chat_image' : 'chat_video';
+            // Determine file type
+            const isImage = file.type.startsWith('image/');
+            const isVideo = file.type.startsWith('video/');
             
-            const result = await uploadService.upload(
-                file,
-                uploadType,
-                '/chat',
-                (progress: UploadProgress) => {
-                    setUploadProgress(progress.percentage);
-                }
-            );
+            if (isImage && onSendMedia) {
+                // Handle image
+                const result = await uploadService.upload(
+                    file,
+                    'chat_image',
+                    '/chat',
+                    (progress: UploadProgress) => {
+                        setUploadProgress(progress.percentage);
+                    }
+                );
 
-            // Send media message
-            onSendMedia(result.secureUrl, type, {
-                publicId: result.publicId,
-                width: result.width,
-                height: result.height,
-                duration: result.duration,
-                thumbnailUrl: result.thumbnailUrl,
-            });
+                onSendMedia(result.secureUrl, 'image', {
+                    publicId: result.publicId,
+                    width: result.width,
+                    height: result.height,
+                    thumbnailUrl: result.thumbnailUrl,
+                });
+            } else if (isVideo && onSendMedia) {
+                // Handle video
+                const result = await uploadService.upload(
+                    file,
+                    'chat_video',
+                    '/chat',
+                    (progress: UploadProgress) => {
+                        setUploadProgress(progress.percentage);
+                    }
+                );
+
+                onSendMedia(result.secureUrl, 'video', {
+                    publicId: result.publicId,
+                    width: result.width,
+                    height: result.height,
+                    duration: result.duration,
+                    thumbnailUrl: result.thumbnailUrl,
+                });
+            } else if (onSendFile) {
+                // Handle document files
+                const result = await uploadService.upload(
+                    file,
+                    'chat_document',
+                    '/chat',
+                    (progress: UploadProgress) => {
+                        setUploadProgress(progress.percentage);
+                    }
+                );
+
+                onSendFile(result.secureUrl, file.name, file.size, file.type);
+            }
 
             // Reset input
             if (e.target) e.target.value = '';
@@ -159,29 +194,23 @@ export function ChatInput({ onSend, onSendMedia, onSendVoice, onSendLocation, di
             )}
 
             <div className="flex items-center gap-3">
-                {/* Hidden file input for both image and video */}
+                {/* Hidden file input for all file types */}
                 <input
-                    ref={imageInputRef}
+                    ref={fileInputRef}
                     type="file"
-                    accept="image/*,video/*"
+                    accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.7z"
                     className="hidden"
-                    onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                            const type = file.type.startsWith('video/') ? 'video' : 'image';
-                            handleFileSelect(e, type);
-                        }
-                    }}
+                    onChange={handleFileSelect}
                     disabled={disabled || isUploading}
                 />
 
-                {/* Add Media Button - modern design */}
+                {/* Add Media/File Button - supports image, video, and files */}
                 <button
                     type="button"
                     className="text-blue-600 hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5"
-                    title="Add photo or video"
+                    title="Add photo, video or file"
                     disabled={disabled || isUploading}
-                    onClick={() => imageInputRef.current?.click()}
+                    onClick={() => fileInputRef.current?.click()}
                 >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                         <circle cx="12" cy="12" r="10" />

@@ -89,6 +89,38 @@ export class SendMessageDto {
   mediaDuration?: number;
 
   @ApiPropertyOptional({
+    description: 'File URL (for file messages)',
+    example: 'https://res.cloudinary.com/my-cloud/raw/upload/v123/chat-app/messages/documents/doc_123.pdf',
+  })
+  @IsOptional()
+  @IsUrl()
+  fileUrl?: string;
+
+  @ApiPropertyOptional({
+    description: 'File name',
+    example: 'document.pdf',
+  })
+  @IsOptional()
+  @IsString()
+  fileName?: string;
+
+  @ApiPropertyOptional({
+    description: 'File size in bytes',
+    example: 1024000,
+  })
+  @IsOptional()
+  @IsNumber()
+  fileSize?: number;
+
+  @ApiPropertyOptional({
+    description: 'File MIME type',
+    example: 'application/pdf',
+  })
+  @IsOptional()
+  @IsString()
+  fileType?: string;
+
+  @ApiPropertyOptional({
     description: 'Location data (for location messages)',
     type: LocationDto,
   })

@@ -78,4 +78,10 @@ export const UPLOAD_OPTIONS = {
     allowed_formats: ['mp3', 'wav', 'ogg', 'webm', 'm4a'],
     max_file_size: 10 * 1024 * 1024, // 10MB
   },
+  CHAT_DOCUMENT: {
+    folder: 'chat-app/messages/documents',
+    resource_type: 'raw', // Cloudinary uses 'raw' for documents
+    allowed_formats: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'],
+    max_file_size: 20 * 1024 * 1024, // 20MB
+  },
 } as const;

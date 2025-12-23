@@ -6,13 +6,13 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
  */
 export class GenerateUploadSignatureDto {
   @ApiProperty({
-    description: 'Upload type (avatar, chat_image, chat_video, chat_audio)',
+    description: 'Upload type (avatar, chat_image, chat_video, chat_audio, chat_document)',
     example: 'chat_image',
-    enum: ['avatar', 'chat_image', 'chat_video', 'chat_audio'],
+    enum: ['avatar', 'chat_image', 'chat_video', 'chat_audio', 'chat_document'],
   })
   @IsString()
-  @IsIn(['avatar', 'chat_image', 'chat_video', 'chat_audio'])
-  uploadType: 'avatar' | 'chat_image' | 'chat_video' | 'chat_audio';
+  @IsIn(['avatar', 'chat_image', 'chat_video', 'chat_audio', 'chat_document'])
+  uploadType: 'avatar' | 'chat_image' | 'chat_video' | 'chat_audio' | 'chat_document';
 
   @ApiPropertyOptional({
     description: 'Optional public ID for the uploaded file',

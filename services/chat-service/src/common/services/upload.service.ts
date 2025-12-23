@@ -64,8 +64,13 @@ export class UploadService {
     );
 
     const cloudName = this.configService.get<string>('CLOUDINARY_CLOUD_NAME');
-    // Use 'video' resource type for both video and audio
-    const resourceType = (dto.uploadType === 'chat_video' || dto.uploadType === 'chat_audio') ? 'video' : 'image';
+    // Determine resource type based on upload type
+    let resourceType = 'image';
+    if (dto.uploadType === 'chat_video' || dto.uploadType === 'chat_audio') {
+      resourceType = 'video';
+    } else if (dto.uploadType === 'chat_document') {
+      resourceType = 'raw';
+    }
 
     return {
       apiKey: this.configService.get<string>('CLOUDINARY_API_KEY'),
@@ -143,6 +148,8 @@ export class UploadService {
         return UPLOAD_OPTIONS.CHAT_VIDEO;
       case 'chat_audio':
         return UPLOAD_OPTIONS.CHAT_AUDIO;
+      case 'chat_document':
+        return UPLOAD_OPTIONS.CHAT_DOCUMENT;
       default:
         throw new BadRequestException('Invalid upload type');
     }

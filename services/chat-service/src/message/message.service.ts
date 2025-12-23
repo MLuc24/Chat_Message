@@ -76,6 +76,10 @@ export class MessageService {
         mediaHeight: sendDto.mediaHeight,
         mediaDuration: sendDto.mediaDuration,
         location: sendDto.location as any,
+        fileUrl: sendDto.fileUrl,
+        fileName: sendDto.fileName,
+        fileSize: sendDto.fileSize,
+        fileType: sendDto.fileType,
       },
       include: {
         statuses: true,

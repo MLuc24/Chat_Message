@@ -25,10 +25,11 @@ export interface Message {
         address?: string;
     };
     
-    // Legacy file fields (for backward compatibility)
+    // File fields (for file attachments)
     fileUrl?: string;
     fileName?: string;
     fileSize?: number;
+    fileType?: string; // MIME type
     
     isEdited?: boolean;
     isDeleted?: boolean;
@@ -76,6 +77,12 @@ export interface SendMessageDto {
         accuracy?: number;
         address?: string;
     };
+    
+    // File fields (for file attachments)
+    fileUrl?: string;
+    fileName?: string;
+    fileSize?: number;
+    fileType?: string;
 }
 
 export interface CreateConversationDto {

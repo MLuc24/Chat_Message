@@ -47,6 +47,7 @@ model Message {
   fileUrl        String?  @map("file_url")
   fileName       String?  @map("file_name")
   fileSize       Int?     @map("file_size")
+  fileType       String?  @map("file_type")
   mediaUrl       String?  @map("media_url")
   mediaPublicId  String?  @map("media_public_id")
   thumbnailUrl   String?  @map("thumbnail_url")

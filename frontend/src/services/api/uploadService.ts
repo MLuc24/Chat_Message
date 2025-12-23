@@ -12,7 +12,7 @@ import axios, { type AxiosProgressEvent } from 'axios';
 import { http } from '../http';
 
 export interface UploadSignatureParams {
-  uploadType: 'avatar' | 'chat_image' | 'chat_video' | 'chat_audio';
+  uploadType: 'avatar' | 'chat_image' | 'chat_video' | 'chat_audio' | 'chat_document';
   publicId?: string;
 }
 
@@ -202,7 +202,7 @@ class UploadService {
    */
   async upload(
     file: File,
-    uploadType: 'avatar' | 'chat_image' | 'chat_video',
+    uploadType: 'avatar' | 'chat_image' | 'chat_video' | 'chat_document',
     serviceUrl: string = '/api/users',
     onProgress?: (progress: UploadProgress) => void,
   ): Promise<UploadResult> {
@@ -251,18 +251,29 @@ class UploadService {
    */
   private validateFile(
     file: File,
-    uploadType: 'avatar' | 'chat_image' | 'chat_video',
+    uploadType: 'avatar' | 'chat_image' | 'chat_video' | 'chat_document',
   ): void {
     const maxSizes = {
       avatar: 5 * 1024 * 1024, // 5MB
       chat_image: 10 * 1024 * 1024, // 10MB
       chat_video: 50 * 1024 * 1024, // 50MB
+      chat_document: 20 * 1024 * 1024, // 20MB
     };
 
     const allowedFormats = {
       avatar: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
       chat_image: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
       chat_video: ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'],
+      chat_document: [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain',
+      ],
     };
 
     // Check file size

@@ -22,6 +22,79 @@ function formatMessageTime(date: Date | string): string {
     });
 }
 
+function formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+function getFileIcon(fileName: string, fileType: string) {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    
+    // PDF
+    if (ext === 'pdf' || fileType.includes('pdf')) {
+        return (
+            <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+            </svg>
+        );
+    }
+    
+    // Word
+    if (['doc', 'docx'].includes(ext || '') || fileType.includes('word')) {
+        return (
+            <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+            </svg>
+        );
+    }
+    
+    // Excel
+    if (['xls', 'xlsx'].includes(ext || '') || fileType.includes('excel') || fileType.includes('spreadsheet')) {
+        return (
+            <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+            </svg>
+        );
+    }
+    
+    // PowerPoint
+    if (['ppt', 'pptx'].includes(ext || '') || fileType.includes('presentation')) {
+        return (
+            <svg className="w-6 h-6 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+            </svg>
+        );
+    }
+    
+    // Archive
+    if (['zip', 'rar', '7z'].includes(ext || '') || fileType.includes('zip') || fileType.includes('compressed')) {
+        return (
+            <svg className="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2h-1v1a1 1 0 11-2 0V3H9v1a1 1 0 01-2 0V3H4z" />
+            </svg>
+        );
+    }
+    
+    // Text
+    if (ext === 'txt' || fileType.includes('text')) {
+        return (
+            <svg className="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+            </svg>
+        );
+    }
+    
+    // Default file icon
+    return (
+        <svg className="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+        </svg>
+    );
+}
+
 export const MessageItem = memo(function MessageItem({
     message,
     isOwn,
@@ -300,6 +373,52 @@ export const MessageItem = memo(function MessageItem({
                                 </a>
                             </div>
                         </div>
+                    )}
+
+                    {/* File message */}
+                    {message.type === 'file' && (
+                        <>
+                            {message.fileUrl ? (
+                                <a
+                                    href={message.fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`flex items-center gap-3 px-4 py-3 min-w-[240px] max-w-[280px] ${
+                                        isOwn ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-200 hover:bg-gray-300'
+                                    } rounded-2xl transition-colors`}
+                                >
+                                    {/* File icon */}
+                                    <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center ${
+                                        isOwn ? 'bg-white/20' : 'bg-white'
+                                    }`}>
+                                        {getFileIcon(message.fileName || '', message.fileType || '')}
+                                    </div>
+
+                                    {/* File info */}
+                                    <div className="flex-1 min-w-0">
+                                        <p className={`text-sm font-medium truncate ${
+                                            isOwn ? 'text-white' : 'text-gray-900'
+                                        }`}>
+                                            {message.fileName || 'File'}
+                                        </p>
+                                        <p className={`text-xs mt-0.5 ${
+                                            isOwn ? 'text-white/80' : 'text-gray-600'
+                                        }`}>
+                                            {formatFileSize(message.fileSize || 0)}
+                                        </p>
+                                    </div>
+
+                                    {/* Download icon */}
+                                    <svg className={`w-5 h-5 flex-shrink-0 ${
+                                        isOwn ? 'text-white' : 'text-gray-600'
+                                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                </a>
+                            ) : (
+                                <div className="px-4 py-2 text-sm text-gray-500">File not available</div>
+                            )}
+                        </>
                     )}
                 </div>
 

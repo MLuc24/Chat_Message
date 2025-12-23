@@ -170,6 +170,30 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall 
         }
     };
 
+    const handleSendFile = async (
+        fileUrl: string,
+        fileName: string,
+        fileSize: number,
+        fileType: string
+    ) => {
+        if (!conversationId) return;
+
+        const dto: SendMessageDto = {
+            conversationId,
+            type: 'file',
+            fileUrl,
+            fileName,
+            fileSize,
+            fileType,
+        };
+
+        try {
+            await sendMessage(dto);
+        } catch (error) {
+            console.error('Failed to send file message:', error);
+        }
+    };
+
     // Show empty state if no conversation selected
     if (!conversationId) {
         return (
@@ -235,6 +259,7 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall 
                     onSendMedia={handleSendMedia}
                     onSendVoice={handleSendVoice}
                     onSendLocation={handleSendLocation}
+                    onSendFile={handleSendFile}
                     disabled={isLoading}
                 />
             </div>

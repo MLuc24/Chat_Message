@@ -203,11 +203,12 @@ export const MessageItem = memo(function MessageItem({
                     {message.type === 'image' && (
                         <>
                             {message.mediaUrl ? (
-                                <div className="relative group cursor-pointer overflow-hidden rounded-2xl shadow-md" onClick={handleMediaClick}>
+                                <div className="relative group cursor-pointer overflow-hidden rounded-2xl shadow-md min-w-[200px] min-h-[200px] bg-gray-100" onClick={handleMediaClick}>
                                     <img
                                         src={message.mediaUrl}
                                         alt="Shared image"
                                         className="max-w-[280px] max-h-[320px] object-cover hover:scale-105 transition-transform duration-300"
+                                        loading="lazy"
                                         onError={(e) => {
                                             console.error('Failed to load image:', message.mediaUrl);
                                             e.currentTarget.style.display = 'none';
@@ -232,11 +233,12 @@ export const MessageItem = memo(function MessageItem({
                     {message.type === 'video' && (
                         <>
                             {message.mediaUrl ? (
-                                <div className="relative group cursor-pointer overflow-hidden rounded-2xl shadow-md" onClick={handleMediaClick}>
+                                <div className="relative group cursor-pointer overflow-hidden rounded-2xl shadow-md min-w-[200px] min-h-[200px] bg-gray-100" onClick={handleMediaClick}>
                                     <video
                                         src={message.mediaUrl}
                                         className="max-w-[320px] max-h-[360px] pointer-events-none"
                                         poster={message.thumbnailUrl}
+                                        preload="metadata"
                                     />
                                     {/* Play button overlay */}
                                     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/50 via-black/30 to-transparent group-hover:from-black/60 group-hover:via-black/40 transition-all">
@@ -431,7 +433,7 @@ export const MessageItem = memo(function MessageItem({
                             {message.mediaItems.map((media, index) => (
                                 <div 
                                     key={index}
-                                    className="relative aspect-square cursor-pointer overflow-hidden rounded-lg group"
+                                    className="relative aspect-square cursor-pointer overflow-hidden rounded-lg group bg-gray-100"
                                     onClick={() => onMediaClick?.(message)}
                                 >
                                     {media.type === 'image' ? (
@@ -440,6 +442,7 @@ export const MessageItem = memo(function MessageItem({
                                                 src={media.url}
                                                 alt=""
                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                loading="lazy"
                                                 onError={(e) => {
                                                     console.error('Failed to load image:', media.url);
                                                     e.currentTarget.style.display = 'none';

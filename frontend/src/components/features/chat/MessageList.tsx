@@ -192,64 +192,115 @@ export const MessageList = memo(function MessageList({
                         {mediaFiles.length > 0 && (
                             <div className="flex items-start justify-end mb-1 gap-2">
                                 <div className="flex flex-col items-end max-w-[65%]">
-                                    {/* Grid Preview */}
-                                    <div className={`grid gap-1 max-w-md ${
-                                        mediaFiles.length === 1 ? 'grid-cols-1' :
-                                        mediaFiles.length === 2 ? 'grid-cols-2' :
-                                        'grid-cols-3'
-                                    }`}>
-                                        {mediaFiles.map((uploadingFile) => (
-                                            <div key={uploadingFile.id} className="relative aspect-square overflow-hidden rounded-lg">
-                                                {uploadingFile.type === 'image' ? (
-                                                    <img 
-                                                        src={uploadingFile.preview} 
-                                                        alt="Uploading" 
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <video 
-                                                        src={uploadingFile.preview} 
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                )}
-                                                
-                                                {/* Circular Progress Overlay */}
-                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                                    <div className="relative w-12 h-12">
-                                                        {/* Background Circle */}
-                                                        <svg className="w-12 h-12 transform -rotate-90">
-                                                            <circle
-                                                                cx="24"
-                                                                cy="24"
-                                                                r="20"
-                                                                stroke="rgba(255,255,255,0.3)"
-                                                                strokeWidth="3"
-                                                                fill="none"
-                                                            />
-                                                            {/* Progress Circle */}
-                                                            <circle
-                                                                cx="24"
-                                                                cy="24"
-                                                                r="20"
-                                                                stroke="white"
-                                                                strokeWidth="3"
-                                                                fill="none"
-                                                                strokeDasharray={`${2 * Math.PI * 20}`}
-                                                                strokeDashoffset={`${2 * Math.PI * 20 * (1 - uploadingFile.progress / 100)}`}
-                                                                className="transition-all duration-300"
-                                                            />
-                                                        </svg>
-                                                        {/* Percentage Text */}
-                                                        <div className="absolute inset-0 flex items-center justify-center">
-                                                            <span className="text-white text-xs font-semibold">
-                                                                {uploadingFile.progress}%
-                                                            </span>
-                                                        </div>
+                                    {/* Single Image/Video - Match sent message styling */}
+                                    {mediaFiles.length === 1 ? (
+                                        <div className="relative overflow-hidden rounded-2xl shadow-md">
+                                            {mediaFiles[0].type === 'image' ? (
+                                                <img 
+                                                    src={mediaFiles[0].preview} 
+                                                    alt="Uploading" 
+                                                    className="max-w-[280px] max-h-[320px] object-cover"
+                                                />
+                                            ) : (
+                                                <video 
+                                                    src={mediaFiles[0].preview} 
+                                                    className="max-w-[320px] max-h-[360px] object-cover"
+                                                />
+                                            )}
+                                            
+                                            {/* Circular Progress Overlay */}
+                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                                <div className="relative w-16 h-16">
+                                                    {/* Background Circle */}
+                                                    <svg className="w-16 h-16 transform -rotate-90">
+                                                        <circle
+                                                            cx="32"
+                                                            cy="32"
+                                                            r="28"
+                                                            stroke="rgba(255,255,255,0.3)"
+                                                            strokeWidth="4"
+                                                            fill="none"
+                                                        />
+                                                        {/* Progress Circle */}
+                                                        <circle
+                                                            cx="32"
+                                                            cy="32"
+                                                            r="28"
+                                                            stroke="white"
+                                                            strokeWidth="4"
+                                                            fill="none"
+                                                            strokeDasharray={`${2 * Math.PI * 28}`}
+                                                            strokeDashoffset={`${2 * Math.PI * 28 * (1 - mediaFiles[0].progress / 100)}`}
+                                                            className="transition-all duration-300"
+                                                        />
+                                                    </svg>
+                                                    {/* Percentage Text */}
+                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                        <span className="text-white text-sm font-semibold">
+                                                            {mediaFiles[0].progress}%
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
+                                        </div>
+                                    ) : (
+                                        /* Multiple Media - Grid Layout */
+                                        <div className={`grid gap-1 max-w-md ${
+                                            mediaFiles.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
+                                        }`}>
+                                            {mediaFiles.map((uploadingFile) => (
+                                                <div key={uploadingFile.id} className="relative aspect-square overflow-hidden rounded-lg">
+                                                    {uploadingFile.type === 'image' ? (
+                                                        <img 
+                                                            src={uploadingFile.preview} 
+                                                            alt="Uploading" 
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <video 
+                                                            src={uploadingFile.preview} 
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    )}
+                                                    
+                                                    {/* Circular Progress Overlay */}
+                                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                                        <div className="relative w-12 h-12">
+                                                            {/* Background Circle */}
+                                                            <svg className="w-12 h-12 transform -rotate-90">
+                                                                <circle
+                                                                    cx="24"
+                                                                    cy="24"
+                                                                    r="20"
+                                                                    stroke="rgba(255,255,255,0.3)"
+                                                                    strokeWidth="3"
+                                                                    fill="none"
+                                                                />
+                                                                {/* Progress Circle */}
+                                                                <circle
+                                                                    cx="24"
+                                                                    cy="24"
+                                                                    r="20"
+                                                                    stroke="white"
+                                                                    strokeWidth="3"
+                                                                    fill="none"
+                                                                    strokeDasharray={`${2 * Math.PI * 20}`}
+                                                                    strokeDashoffset={`${2 * Math.PI * 20 * (1 - uploadingFile.progress / 100)}`}
+                                                                    className="transition-all duration-300"
+                                                                />
+                                                            </svg>
+                                                            {/* Percentage Text */}
+                                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                                <span className="text-white text-xs font-semibold">
+                                                                    {uploadingFile.progress}%
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
 
                                     {/* Timestamp */}
                                     <div className="flex items-center gap-1 mt-1">

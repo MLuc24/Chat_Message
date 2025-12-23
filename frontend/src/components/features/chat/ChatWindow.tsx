@@ -293,16 +293,15 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall 
             </div>
 
             {/* Chat Info Panel */}
-            {recipient && (
-                <ChatInfoPanel
-                    isOpen={isInfoPanelOpen}
-                    onClose={() => setIsInfoPanelOpen(false)}
-                    otherUser={recipient}
-                    conversationId={conversationId!}
-                    sharedMedia={sharedMedia}
-                    sharedDocuments={sharedDocuments}
-                />
-            )}
+            <ChatInfoPanel
+                isOpen={isInfoPanelOpen}
+                onClose={() => setIsInfoPanelOpen(false)}
+                otherUser={recipient}
+                conversation={currentConversation || undefined}
+                conversationId={conversationId!}
+                sharedMedia={sharedMedia}
+                sharedDocuments={sharedDocuments}
+            />
 
             {/* Group Member List Modal */}
             {currentConversation?.type === 'group' && (

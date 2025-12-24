@@ -323,6 +323,7 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall,
                 conversationId={conversationId!}
                 sharedMedia={sharedMedia}
                 sharedDocuments={sharedDocuments}
+                onConversationUpdate={() => fetchConversations()}
             />
 
             {/* Group Member List Modal */}

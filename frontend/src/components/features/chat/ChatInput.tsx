@@ -274,7 +274,8 @@ export function ChatInput({ onSend, onSendMedia, onSendMediaGroup, onSendVoice, 
                 {/* Add Media/File Button - supports image, video, and files */}
                 <button
                     type="button"
-                    className="text-blue-600 hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5"
+                    className="hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5 chat-icon"
+                    style={{ color: 'var(--chat-icon-secondary)' }}
                     title="Add photos, videos or files (max 10 at once)"
                     disabled={disabled || uploadingFiles.length > 0}
                     onClick={() => fileInputRef.current?.click()}
@@ -288,7 +289,8 @@ export function ChatInput({ onSend, onSendMedia, onSendMediaGroup, onSendVoice, 
                 {/* Voice Button */}
                 <button
                     type="button"
-                    className="text-blue-600 hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5"
+                    className="hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5 chat-icon"
+                    style={{ color: 'var(--chat-icon-secondary)' }}
                     title="Record voice message"
                     disabled={disabled || uploadingFiles.length > 0}
                     onClick={() => setShowVoiceRecorder(true)}
@@ -302,7 +304,8 @@ export function ChatInput({ onSend, onSendMedia, onSendMediaGroup, onSendVoice, 
                 {/* Location Button */}
                 <button
                     type="button"
-                    className="text-blue-600 hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5"
+                    className="hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5 chat-icon"
+                    style={{ color: 'var(--chat-icon-secondary)' }}
                     title="Share location"
                     disabled={disabled || uploadingFiles.length > 0}
                     onClick={() => setShowLocationPicker(true)}
@@ -316,7 +319,8 @@ export function ChatInput({ onSend, onSendMedia, onSendMediaGroup, onSendVoice, 
                 <div className="relative">
                     <button
                         type="button"
-                        className="text-blue-600 hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5"
+                        className="hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed rounded-full p-1.5 chat-icon"
+                        style={{ color: 'var(--chat-icon-secondary)' }}
                         title="Add emoji"
                         disabled={disabled || uploadingFiles.length > 0}
                         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
@@ -345,7 +349,11 @@ export function ChatInput({ onSend, onSendMedia, onSendMediaGroup, onSendVoice, 
                         onKeyPress={handleKeyPress}
                         placeholder="Aa"
                         disabled={disabled || uploadingFiles.length > 0}
-                        className="w-full px-4 py-2.5 bg-gray-100 border-0 rounded-full text-sm focus:outline-none focus:bg-gray-200 transition-colors disabled:opacity-50"
+                        className="w-full px-4 py-2.5 border-0 rounded-full text-sm focus:outline-none transition-colors disabled:opacity-50"
+                        style={{ 
+                            backgroundColor: 'var(--chat-input-bg)',
+                            borderColor: 'var(--chat-input-border)'
+                        }}
                     />
                 </div>
 
@@ -354,7 +362,8 @@ export function ChatInput({ onSend, onSendMedia, onSendMediaGroup, onSendVoice, 
                     <button
                         type="submit"
                         disabled={disabled || uploadingFiles.length > 0}
-                        className="text-blue-600 hover:bg-blue-50 disabled:text-gray-300 disabled:cursor-not-allowed transition-all flex-shrink-0 rounded-full p-1.5"
+                        className="hover:bg-blue-50 disabled:text-gray-300 disabled:cursor-not-allowed transition-all flex-shrink-0 rounded-full p-1.5 chat-icon"
+                        style={{ color: disabled ? undefined : 'var(--chat-icon-primary)' }}
                         title="Send message"
                     >
                         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -364,7 +373,8 @@ export function ChatInput({ onSend, onSendMedia, onSendMediaGroup, onSendVoice, 
                 ) : (
                     <button
                         type="button"
-                        className="text-blue-600 hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 rounded-full p-1.5"
+                        className="hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 rounded-full p-1.5 chat-icon"
+                        style={{ color: 'var(--chat-icon-primary)' }}
                         title="Send like"
                         onClick={() => onSend('👍')}
                         disabled={disabled || uploadingFiles.length > 0}

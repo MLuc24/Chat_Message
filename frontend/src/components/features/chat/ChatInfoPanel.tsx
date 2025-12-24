@@ -20,6 +20,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { Modal } from '../../common/Modal';
 import { useAuthStore } from '@/stores/authStore';
+import { ChatCustomizeSection } from './ChatCustomizeSection';
 
 interface ChatInfoPanelProps {
     isOpen: boolean;
@@ -29,6 +30,7 @@ interface ChatInfoPanelProps {
     conversationId: string;
     sharedMedia?: Message[];
     sharedDocuments?: Message[];
+    onConversationUpdate?: (updated: Partial<Conversation>) => void;
 }
 
 interface NotificationSettings {
@@ -46,6 +48,7 @@ export function ChatInfoPanel({
     conversationId,
     sharedMedia = [],
     sharedDocuments = [],
+    onConversationUpdate,
 }: ChatInfoPanelProps) {
     const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
         mute: false,
@@ -361,6 +364,16 @@ export function ChatInfoPanel({
                             )}
                         </div>
                     </div>
+
+                    {/* Chat Customize Section */}
+                    {conversation && currentUser && (
+                        <ChatCustomizeSection
+                            conversation={conversation}
+                            isGroup={isGroup}
+                            currentUserId={currentUser.id}
+                            onConversationUpdate={onConversationUpdate}
+                        />
+                    )}
 
                     {/* Members Section - Only for groups */}
                     {isGroup && conversation && (

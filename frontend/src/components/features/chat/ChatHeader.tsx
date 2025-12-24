@@ -117,7 +117,8 @@ export const ChatHeader = memo(function ChatHeader({
                 {onVoiceCall && (
                     <button
                         onClick={onVoiceCall}
-                        className="p-2.5 text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
+                        className="p-2.5 hover:bg-gray-100 rounded-full transition-colors chat-icon"
+                        style={{ color: 'var(--chat-icon-primary)' }}
                         aria-label="Voice call"
                     >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,7 +136,8 @@ export const ChatHeader = memo(function ChatHeader({
                 {onVideoCall && (
                     <button
                         onClick={onVideoCall}
-                        className="p-2.5 text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
+                        className="p-2.5 hover:bg-gray-100 rounded-full transition-colors chat-icon"
+                        style={{ color: 'var(--chat-icon-primary)' }}
                         aria-label="Video call"
                     >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +155,8 @@ export const ChatHeader = memo(function ChatHeader({
                 <Dropdown
                     trigger={
                         <button
-                            className="p-2.5 text-blue-600 hover:bg-gray-100 rounded-full transition-colors"
+                            className="p-2.5 hover:bg-gray-100 rounded-full transition-colors chat-icon"
+                            style={{ color: 'var(--chat-icon-primary)' }}
                             aria-label="More options"
                         >
                             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">

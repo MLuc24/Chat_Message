@@ -1,0 +1,50 @@
+/**
+ * Chat Theme CSS Variables
+ * Theme áp dụng toàn diện cho chat window
+ */
+
+:root {
+  /* Default chat bubble theme - Blue */
+  --chat-bubble-own: #0084ff;
+  --chat-bubble-own-text: #ffffff;
+  --chat-bubble-own-gradient: linear-gradient(135deg, #0084ff 0%, #0066cc 100%);
+  
+  --chat-bubble-other: #f0f0f0;
+  --chat-bubble-other-text: #050505;
+  --chat-bubble-other-gradient: #f0f0f0;
+  
+  --chat-background: #ffffff;
+  --chat-background-gradient: #ffffff;
+  
+  --chat-theme-pattern: linear-gradient(135deg, #0084ff 0%, #0066cc 100%);
+  
+  /* UI Elements */
+  --chat-icon-primary: #0084ff;
+  --chat-icon-secondary: #65676b;
+  --chat-icon-hover: #0066cc;
+  --chat-button-bg: #0084ff;
+  --chat-button-text: #ffffff;
+  --chat-input-bg: #f0f2f5;
+  --chat-input-border: #e4e6eb;
+  --chat-header-bg: #ffffff;
+  --chat-header-text: #050505;
+}
+
+/* Smooth transitions for theme changes */
+.message-bubble {
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Icon transitions */
+.chat-icon {
+  transition: color 0.3s ease;
+}
+
+/* Optional: Add shadow effects for themed bubbles */
+.message-bubble-own {
+  box-shadow: 0 1px 2px rgba(0, 132, 255, 0.2);
+}
+
+.message-bubble-other {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}

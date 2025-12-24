@@ -31,6 +31,8 @@ import {
   ChangePasswordDto, 
   ProfileResponseDto,
   UploadAvatarDto,
+  SaveThemePreferenceDto,
+  ThemePreferenceResponseDto,
 } from './dto';
 import { UploadService } from '../common/services/upload.service';
 import {
@@ -262,6 +264,87 @@ export class UserController {
     @Headers('x-user-id') userId: string,
   ): Promise<{ message: string }> {
     return this.userService.deleteAvatar(userId);
+  }
+
+  // ===== THEME MANAGEMENT ENDPOINTS =====
+
+  /**
+   * Get user's theme preference
+   */
+  @Get('users/me/theme')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ 
+    summary: 'Get user theme preference',
+    description: 'Get current user\'s theme preference',
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Theme preference retrieved',
+    type: ThemePreferenceResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'User not found or no theme preference set' })
+  @ApiHeader({ 
+    name: 'x-user-id', 
+    required: true,
+    description: 'User ID from JWT token',
+  })
+  async getUserThemePreference(
+    @Headers('x-user-id') userId: string,
+  ): Promise<ThemePreferenceResponseDto> {
+    return this.userService.getUserThemePreference(userId);
+  }
+
+  /**
+   * Save user's theme preference
+   */
+  @Put('users/me/theme')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ 
+    summary: 'Save theme preference',
+    description: 'Save user\'s theme preference',
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Theme preference saved',
+    type: ThemePreferenceResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid theme ID' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiHeader({ 
+    name: 'x-user-id', 
+    required: true,
+    description: 'User ID from JWT token',
+  })
+  async saveThemePreference(
+    @Headers('x-user-id') userId: string,
+    @Body() dto: SaveThemePreferenceDto,
+  ): Promise<ThemePreferenceResponseDto> {
+    return this.userService.saveThemePreference(userId, dto);
+  }
+
+  /**
+   * Delete user's theme preference
+   */
+  @Delete('users/me/theme')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ 
+    summary: 'Delete theme preference',
+    description: 'Reset theme to default',
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Theme preference deleted',
+  })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiHeader({ 
+    name: 'x-user-id', 
+    required: true,
+    description: 'User ID from JWT token',
+  })
+  async deleteThemePreference(
+    @Headers('x-user-id') userId: string,
+  ): Promise<{ message: string }> {
+    return this.userService.deleteThemePreference(userId);
   }
 
 }

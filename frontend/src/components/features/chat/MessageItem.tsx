@@ -244,17 +244,25 @@ export const MessageItem = memo(function MessageItem({
                                 : (message.type === 'audio' || message.type === 'location')
                                     ? ''
                                     : 'p-1'
-                        } ${
-                        isEmojiMessage
-                            ? 'bg-transparent' // Không có background cho emoji
-                            : message.type === 'text' 
-                                ? isOwn
-                                    ? 'bg-blue-600 text-white rounded-br-sm'
-                                    : 'bg-gray-200 text-gray-900 rounded-bl-sm'
-                                : (message.type === 'audio' || message.type === 'location')
-                                    ? 'bg-transparent'
-                                    : 'bg-transparent'
                         }`}
+                    style={{
+                        background: isEmojiMessage
+                            ? 'transparent'
+                            : message.type === 'text'
+                                ? isOwn
+                                    ? 'var(--chat-bubble-own-gradient, var(--chat-bubble-own))'
+                                    : 'var(--chat-bubble-other-gradient, var(--chat-bubble-other))'
+                                : 'transparent',
+                        color: isEmojiMessage
+                            ? 'inherit'
+                            : message.type === 'text'
+                                ? isOwn
+                                    ? 'var(--chat-bubble-own-text)'
+                                    : 'var(--chat-bubble-other-text)'
+                                : 'inherit',
+                        borderBottomRightRadius: isOwn && message.type === 'text' && !isEmojiMessage ? '4px' : undefined,
+                        borderBottomLeftRadius: !isOwn && message.type === 'text' && !isEmojiMessage ? '4px' : undefined,
+                    }}
                 >
                     {/* Text message */}
                     {message.type === 'text' && message.text && (
@@ -323,26 +331,44 @@ export const MessageItem = memo(function MessageItem({
                     {message.type === 'audio' && (
                         <>
                             {message.mediaUrl ? (
-                                <div className={`flex items-center gap-3 px-4 py-3 min-w-[240px] ${
-                                    isOwn ? 'bg-blue-600' : 'bg-gray-200'
-                                } rounded-2xl`}>
+                                <div 
+                                    className="flex items-center gap-3 px-4 py-3 min-w-[240px] rounded-2xl"
+                                    style={{
+                                        background: isOwn 
+                                            ? 'var(--chat-bubble-own-gradient, var(--chat-bubble-own))'
+                                            : 'var(--chat-bubble-other-gradient, var(--chat-bubble-other))',
+                                    }}
+                                >
                                     {/* Play/Pause button */}
                                     <button 
                                         onClick={toggleAudioPlayback}
-                                        className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-                                            isOwn ? 'bg-white/20 hover:bg-white/30' : 'bg-gray-300 hover:bg-gray-400'
-                                        } transition-colors`}
+                                        className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors"
+                                        style={{
+                                            backgroundColor: isOwn ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.backgroundColor = isOwn ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.15)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.backgroundColor = isOwn ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)';
+                                        }}
                                     >
                                         {isPlaying ? (
-                                            <svg className={`w-5 h-5 ${
-                                                isOwn ? 'text-white' : 'text-gray-700'
-                                            }`} fill="currentColor" viewBox="0 0 20 20">
+                                            <svg 
+                                                className="w-5 h-5"
+                                                fill="currentColor" 
+                                                viewBox="0 0 20 20"
+                                                style={{ color: isOwn ? 'var(--chat-bubble-own-text)' : 'var(--chat-bubble-other-text)' }}
+                                            >
                                                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                                             </svg>
                                         ) : (
-                                            <svg className={`w-5 h-5 ml-0.5 ${
-                                                isOwn ? 'text-white' : 'text-gray-700'
-                                            }`} fill="currentColor" viewBox="0 0 20 20">
+                                            <svg 
+                                                className="w-5 h-5 ml-0.5"
+                                                fill="currentColor" 
+                                                viewBox="0 0 20 20"
+                                                style={{ color: isOwn ? 'var(--chat-bubble-own-text)' : 'var(--chat-bubble-other-text)' }}
+                                            >
                                                 <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
                                             </svg>
                                         )}
@@ -356,21 +382,27 @@ export const MessageItem = memo(function MessageItem({
                                             return (
                                                 <div
                                                     key={idx}
-                                                    className={`w-1 rounded-full transition-colors ${
-                                                        isActive 
-                                                            ? isOwn ? 'bg-white' : 'bg-blue-600'
-                                                            : isOwn ? 'bg-white/40' : 'bg-gray-400'
-                                                    }`}
-                                                    style={{ height: `${height}%` }}
+                                                    className="w-1 rounded-full transition-colors"
+                                                    style={{ 
+                                                        height: `${height}%`,
+                                                        backgroundColor: isActive 
+                                                            ? isOwn 
+                                                                ? 'var(--chat-bubble-own-text)'
+                                                                : 'currentColor'
+                                                            : isOwn 
+                                                                ? 'rgba(255,255,255,0.4)'
+                                                                : 'rgba(0,0,0,0.3)'
+                                                    }}
                                                 />
                                             );
                                         })}
                                     </div>
 
                                     {/* Duration */}
-                                    <span className={`text-xs font-medium ${
-                                        isOwn ? 'text-white/90' : 'text-gray-600'
-                                    }`}>
+                                    <span 
+                                        className="text-xs font-medium opacity-90"
+                                        style={{ color: isOwn ? 'var(--chat-bubble-own-text)' : 'var(--chat-bubble-other-text)' }}
+                                    >
                                         {isPlaying ? formatAudioTime(currentTime) : formatAudioTime(message.mediaDuration || 0)}
                                     </span>
 

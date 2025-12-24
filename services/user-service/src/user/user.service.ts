@@ -8,7 +8,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { StorageService } from '../storage/storage.service';
-import { UpdateProfileDto, ChangePasswordDto, ProfileResponseDto } from './dto';
+import { UpdateProfileDto, ChangePasswordDto, ProfileResponseDto, SaveThemePreferenceDto, ThemePreferenceResponseDto } from './dto';
 
 @Injectable()
 export class UserService {
@@ -362,5 +362,122 @@ export class UserService {
     });
 
     return { message: 'Avatar deleted successfully' };
+  }
+
+  // ===== THEME MANAGEMENT =====
+
+  /**
+   * Get user's theme preference
+   */
+  async getUserThemePreference(userId: string): Promise<ThemePreferenceResponseDto> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { 
+        id: true, 
+        themePreference: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!user.themePreference) {
+      throw new NotFoundException('No theme preference set');
+    }
+
+    return {
+      userId: user.id,
+      themeId: user.themePreference,
+      appliedAt: user.updatedAt,
+    };
+  }
+
+  /**
+   * Save user's theme preference
+   */
+  async saveThemePreference(
+    userId: string, 
+    dto: SaveThemePreferenceDto
+  ): Promise<ThemePreferenceResponseDto> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Validate theme ID (basic validation)
+    const validThemeIds = [
+      'default',
+      'superhero',
+      'summer',
+      'ocean',
+      'heart-drive',
+      'autumn',
+      'karol-g',
+      'dark',
+    ];
+
+    if (!validThemeIds.includes(dto.themeId)) {
+      throw new BadRequestException('Invalid theme ID');
+    }
+
+    // Update theme preference
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        themePreference: dto.themeId,
+        updatedAt: new Date(),
+      },
+      select: {
+        id: true,
+        themePreference: true,
+        updatedAt: true,
+      },
+    });
+
+    // Publish theme update event (optional, for real-time sync)
+    await this.redis.publish('user.theme.updated', {
+      userId,
+      themeId: dto.themeId,
+    });
+
+    return {
+      userId: updatedUser.id,
+      themeId: updatedUser.themePreference!,
+      appliedAt: updatedUser.updatedAt,
+    };
+  }
+
+  /**
+   * Delete user's theme preference (reset to default)
+   */
+  async deleteThemePreference(userId: string): Promise<{ message: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Reset to default theme
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        themePreference: 'default',
+        updatedAt: new Date(),
+      },
+    });
+
+    // Publish theme reset event
+    await this.redis.publish('user.theme.reset', {
+      userId,
+    });
+
+    return { message: 'Theme preference reset to default' };
   }
 }

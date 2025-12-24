@@ -5,6 +5,7 @@ import { MessageItem } from './MessageItem';
 import { TypingIndicator } from './TypingIndicator';
 import { EmptyState } from '../../common/EmptyState';
 import { MediaModal } from '../../common/MediaModal';
+import { ChatBackground } from './ChatBackground';
 import { useAuth } from '../../../hooks/useAuth';
 import { useMediaModal } from '../../../hooks/useMediaModal';
 import type { Message, Conversation } from '../../../types/chat.types';
@@ -123,7 +124,7 @@ export const MessageList = memo(function MessageList({
     }
 
     return (
-        <div className="flex-1 overflow-y-auto px-4 py-4 bg-gray-50">
+        <ChatBackground className="flex-1 overflow-y-auto px-4 py-4">
             {messageList.map((message, index) => {
                 const isOwn = message.senderId === user?.id;
                 const showDateSeparator = shouldShowDateSeparator(message, messageList[index - 1]);
@@ -383,6 +384,6 @@ export const MessageList = memo(function MessageList({
                     currentIndex={currentIndex}
                 />
             )}
-        </div>
+        </ChatBackground>
     );
 });

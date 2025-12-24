@@ -3,6 +3,36 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* Default theme colors - will be overridden by ThemeStore */
+    --color-primary: #3b82f6;
+    --color-primary-hover: #2563eb;
+    --color-primary-text: #ffffff;
+    
+    --color-background: #ffffff;
+    --color-background-secondary: #f3f4f6;
+    --color-background-tertiary: #e5e7eb;
+    
+    --color-bubble-own: #3b82f6;
+    --color-bubble-other: #f3f4f6;
+    --color-bubble-own-text: #ffffff;
+    --color-bubble-other-text: #1f2937;
+    
+    --color-text-primary: #1f2937;
+    --color-text-secondary: #4b5563;
+    --color-text-muted: #9ca3af;
+    
+    --color-border: #e5e7eb;
+    --color-border-hover: #d1d5db;
+    
+    --color-online: #10b981;
+    --color-offline: #6b7280;
+    --color-away: #f59e0b;
+    
+    --color-accent: #8b5cf6;
+    --color-accent-hover: #7c3aed;
+  }
+
   * {
     margin: 0;
     padding: 0;
@@ -10,7 +40,9 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply text-gray-900;
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
       'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
       sans-serif;

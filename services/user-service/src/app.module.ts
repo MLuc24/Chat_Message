@@ -6,6 +6,7 @@ import { RedisModule } from './redis/redis.module';
 import { StorageModule } from './storage/storage.module';
 import { EventsModule } from './events/events.module';
 import { UploadModule } from './common/upload.module';
+import { ThemeModule } from './theme/theme.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { UploadModule } from './common/upload.module';
     EventsModule,
     UploadModule,
     UserModule,
+    ThemeModule,
   ],
 })
 export class AppModule {}

@@ -357,12 +357,15 @@ export class ConversationService {
         data: {
           conversationId,
           userId,
-          defaultEmoji: '👍', // Set default emoji in code, not in schema
         },
       });
     }
 
-    return settings;
+    // Return with default emoji if not set
+    return {
+      ...settings,
+      defaultEmoji: settings.defaultEmoji || '👍',
+    };
   }
 
   async updateConversationSettings(
@@ -376,8 +379,6 @@ export class ConversationService {
       defaultEmoji?: string;
     },
   ) {
-    console.log('updateConversationSettings called with:', { conversationId, userId, updateData });
-    
     // Check membership
     const member = await this.prisma.conversationMember.findUnique({
       where: {
@@ -408,7 +409,6 @@ export class ConversationService {
       update: updateData,
     });
 
-    console.log('Settings updated:', settings);
     return settings;
   }
 

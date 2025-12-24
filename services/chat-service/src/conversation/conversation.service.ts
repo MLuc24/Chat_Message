@@ -177,10 +177,13 @@ export class ConversationService {
   ) {
     const conversation = await this.getConversation(conversationId, userId);
 
-    // Check if user is admin
-    const member = conversation.members.find((m) => m.userId === userId);
-    if (member?.role !== 'admin') {
-      throw new ForbiddenException('Only admins can update conversation');
+    // For direct conversations, allow theme changes without admin check
+    // For group conversations, check if user is admin
+    if (conversation.type === 'group') {
+      const member = conversation.members.find((m) => m.userId === userId);
+      if (member?.role !== 'admin') {
+        throw new ForbiddenException('Only admins can update conversation');
+      }
     }
 
     const updated = await this.prisma.conversation.update({
@@ -188,15 +191,14 @@ export class ConversationService {
       data: updateDto,
     });
 
-    // Publish group_updated event via Redis (only for group conversations)
-    if (conversation.type === 'group') {
-      const memberIds = conversation.members.map((m) => m.userId);
-      await this.redis.publishGroupUpdated(conversationId, memberIds, {
-        name: updateDto.name,
-        avatarUrl: updateDto.avatarUrl,
-        updatedBy: userId,
-      });
-    }
+    // Publish update event via Redis to all members (both direct and group)
+    const memberIds = conversation.members.map((m) => m.userId);
+    await this.redis.publishGroupUpdated(conversationId, memberIds, {
+      name: updateDto.name,
+      avatarUrl: updateDto.avatarUrl,
+      themeId: updateDto.themeId,
+      updatedBy: userId,
+    });
 
     return updated;
   }

@@ -8,6 +8,7 @@ import { ChatInfoPanel } from './ChatInfoPanel';
 import { GroupMemberList } from './GroupMemberList';
 import { EmptyState } from '../../common/EmptyState';
 import { useChat } from '../../../hooks/useChat';
+import { useTheme } from '../../../hooks/useTheme';
 import { chatService } from '../../../services/api/chatService';
 import { uploadService } from '../../../services/api/uploadService';
 import type { SendMessageDto, Message, MediaItem } from '../../../types/chat.types';
@@ -31,6 +32,7 @@ interface ChatWindowProps {
 
 export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall, onStartGroupVoiceCall, onStartGroupVideoCall }: ChatWindowProps) {
     const { currentMessages, sendMessage, isLoading, conversations, fetchConversations } = useChat(conversationId || undefined);
+    const { loadConversationTheme } = useTheme();
     const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
     const [isMemberListOpen, setIsMemberListOpen] = useState(false);
     const [sharedMedia, setSharedMedia] = useState<Message[]>([]);
@@ -50,6 +52,37 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall,
     const recipient = currentConversation?.participants?.find(
         (p) => p.id !== currentUserId
     );
+
+    // Load conversation theme when conversation changes
+    useEffect(() => {
+        if (currentConversation?.themeId) {
+            loadConversationTheme(currentConversation.themeId);
+        } else if (currentConversation) {
+            // If conversation has no theme, use default
+            loadConversationTheme('default');
+        }
+    }, [currentConversation?.id, currentConversation?.themeId, loadConversationTheme]);
+
+    // Listen for theme changes via WebSocket
+    useEffect(() => {
+        if (!conversationId) return;
+
+        const handleGroupUpdated = (event: any) => {
+            // Only apply theme if this is the active conversation and theme changed
+            if (event.conversationId === conversationId && event.themeId) {
+                loadConversationTheme(event.themeId);
+            }
+        };
+
+        // Import socketManager
+        import('../../../services/websocket/socketManager').then(({ socketManager }) => {
+            socketManager.on('group_updated', handleGroupUpdated);
+            
+            return () => {
+                socketManager.off('group_updated', handleGroupUpdated);
+            };
+        });
+    }, [conversationId, loadConversationTheme]);
 
     // Load shared media and documents when conversation changes
     useEffect(() => {

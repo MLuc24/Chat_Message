@@ -1,6 +1,3 @@
-// ChatCustomizeSection - Customize chat settings section
-// Features: Rename group, Change avatar (group only), Change theme, Change emoji, Edit nicknames
-
 import { useState, useCallback } from 'react';
 import { 
     PencilIcon, 
@@ -369,6 +366,7 @@ export function ChatCustomizeSection({
             <ThemeSelector 
                 isOpen={isThemeSelectorOpen}
                 onClose={() => setIsThemeSelectorOpen(false)}
+                conversationId={conversation.id}
             />
         </>
     );

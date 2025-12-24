@@ -70,7 +70,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   async publishGroupUpdated(
     conversationId: string,
     memberIds: string[],
-    data: { name?: string; avatarUrl?: string; updatedBy: string },
+    data: { name?: string; avatarUrl?: string; themeId?: string; updatedBy: string },
   ): Promise<void> {
     await this.publisher.publish(
       `conversation:${conversationId}`,

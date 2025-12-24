@@ -22,6 +22,10 @@ export class UpdateConversationDto {
   @IsOptional()
   @IsString()
   avatarUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  themeId?: string;
 }
 
 export class AddMemberDto {

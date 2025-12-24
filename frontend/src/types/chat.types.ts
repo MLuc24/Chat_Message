@@ -61,6 +61,7 @@ export interface Conversation {
     type: 'direct' | 'group';
     name?: string; // for group conversations
     avatarUrl?: string; // for group conversations
+    themeId?: string; // theme for this conversation
     members: ConversationMember[];
     participants?: User[]; // populated members data (optional)
     lastMessage?: Message;
@@ -111,6 +112,7 @@ export interface CreateConversationDto {
 export interface UpdateGroupDto {
     name?: string;
     avatarUrl?: string;
+    themeId?: string;
 }
 
 export interface AddMemberDto {
@@ -135,5 +137,6 @@ export interface GroupUpdatedEvent {
     conversationId: string;
     name?: string;
     avatarUrl?: string;
+    themeId?: string;
     updatedBy: string;
 }

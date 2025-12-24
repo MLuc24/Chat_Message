@@ -12,6 +12,7 @@ model Conversation {
   type      String   // direct, group
   name      String?
   avatarUrl String?  @map("avatar_url")
+  themeId   String?  @map("theme_id") @default("default") // Theme for this conversation
   createdBy String   @map("created_by")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

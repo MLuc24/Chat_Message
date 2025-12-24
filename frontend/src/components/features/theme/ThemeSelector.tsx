@@ -7,6 +7,7 @@ import type { Theme } from '@/types/theme.types';
 interface ThemeSelectorProps {
   isOpen: boolean;
   onClose: () => void;
+  conversationId?: string; // If provided, save theme to conversation
 }
 
 // Theme categories for better organization
@@ -44,8 +45,8 @@ const categorizeTheme = (themeId: string): CategoryKey => {
  * ThemeSelector Modal Component
  * Modern, beautiful modal for selecting chat themes
  */
-export const ThemeSelector = memo(function ThemeSelector({ isOpen, onClose }: ThemeSelectorProps) {
-  const { currentTheme, availableThemes, saveTheme } = useTheme();
+export const ThemeSelector = memo(function ThemeSelector({ isOpen, onClose, conversationId }: ThemeSelectorProps) {
+  const { currentTheme, availableThemes, saveTheme, saveConversationTheme } = useTheme();
   const [selectedTheme, setSelectedTheme] = useState<Theme>(currentTheme);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey>('all');
@@ -59,7 +60,12 @@ export const ThemeSelector = memo(function ThemeSelector({ isOpen, onClose }: Th
     if (selectedTheme) {
       setIsApplying(true);
       try {
-        await saveTheme(selectedTheme.id);
+        // If conversationId is provided, save to conversation; otherwise save to user
+        if (conversationId) {
+          await saveConversationTheme(conversationId, selectedTheme.id);
+        } else {
+          await saveTheme(selectedTheme.id);
+        }
         setTimeout(() => {
           setIsApplying(false);
           onClose();
@@ -67,9 +73,10 @@ export const ThemeSelector = memo(function ThemeSelector({ isOpen, onClose }: Th
       } catch (error) {
         setIsApplying(false);
         console.error('Failed to save theme:', error);
+        alert('Không thể lưu theme. Vui lòng thử lại.');
       }
     }
-  }, [selectedTheme, saveTheme, onClose]);
+  }, [selectedTheme, saveTheme, saveConversationTheme, conversationId, onClose]);
 
   const handleCancel = useCallback(() => {
     setSelectedTheme(currentTheme);

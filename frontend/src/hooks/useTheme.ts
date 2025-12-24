@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useThemeStore } from '@/stores/themeStore';
 import { themeService } from '@/services/api/themeService';
+import { chatService } from '@/services/api/chatService';
 import { useAuthStore } from '@/stores/authStore';
 import type { Theme } from '@/types/theme.types';
 import { PREDEFINED_THEMES } from '@/utils/themeConstants';
@@ -9,7 +10,7 @@ import { PREDEFINED_THEMES } from '@/utils/themeConstants';
  * Custom hook for theme management
  * 
  * @example
- * const { currentTheme, availableThemes, changeTheme, saveTheme } = useTheme();
+ * const { currentTheme, availableThemes, changeTheme, saveTheme, saveConversationTheme } = useTheme();
  */
 export function useTheme() {
   const { currentTheme, isLoading, error, setTheme, applyTheme, resetTheme, clearError } = useThemeStore();
@@ -29,7 +30,7 @@ export function useTheme() {
   }, [setTheme]);
   
   /**
-   * Change and save theme preference to server
+   * Change and save theme preference to server (user-level)
    */
   const saveTheme = useCallback(async (themeId: string) => {
     if (!isAuthenticated) {
@@ -45,8 +46,27 @@ export function useTheme() {
       // Save to server
       await themeService.saveThemePreference({ themeId });
     } catch (error) {
-      console.error('Failed to save theme preference:', error);
       // Theme is already applied, just log the error
+    }
+  }, [isAuthenticated, setTheme]);
+  
+  /**
+   * Save theme for a specific conversation (conversation-level)
+   */
+  const saveConversationTheme = useCallback(async (conversationId: string, themeId: string) => {
+    if (!isAuthenticated) {
+      setTheme(themeId);
+      return;
+    }
+    
+    try {
+      // Apply theme immediately for better UX
+      setTheme(themeId);
+      
+      // Save to conversation
+      await chatService.updateConversation(conversationId, { themeId });
+    } catch (error) {
+      throw error;
     }
   }, [isAuthenticated, setTheme]);
   
@@ -63,9 +83,18 @@ export function useTheme() {
         setTheme(preference.themeId);
       }
     } catch (error) {
-      console.error('Failed to load theme preference:', error);
+      // Silently fail
     }
   }, [isAuthenticated, setTheme]);
+  
+  /**
+   * Load theme for a specific conversation
+   */
+  const loadConversationTheme = useCallback((themeId?: string) => {
+    if (themeId) {
+      setTheme(themeId);
+    }
+  }, [setTheme]);
   
   /**
    * Reset to default theme
@@ -77,7 +106,7 @@ export function useTheme() {
       try {
         await themeService.deleteThemePreference();
       } catch (error) {
-        console.error('Failed to delete theme preference:', error);
+        // Silently fail
       }
     }
   }, [isAuthenticated, resetTheme]);
@@ -99,6 +128,8 @@ export function useTheme() {
     // Actions
     changeTheme,
     saveTheme,
+    saveConversationTheme,
+    loadConversationTheme,
     resetToDefault,
     previewTheme,
     loadUserTheme,

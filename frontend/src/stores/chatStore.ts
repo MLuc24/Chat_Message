@@ -323,7 +323,7 @@ export const useChatStore = create<ChatState>()(
             }));
         },
 
-        // Handle group updated (name, avatar)
+        // Handle group updated (name, avatar, theme)
         handleGroupUpdated: (event) => {
             set((state) => ({
                 conversations: state.conversations.map((conv) => {
@@ -333,6 +333,7 @@ export const useChatStore = create<ChatState>()(
                         ...conv,
                         name: event.name ?? conv.name,
                         avatarUrl: event.avatarUrl ?? conv.avatarUrl,
+                        themeId: event.themeId ?? conv.themeId,
                     };
                 }),
             }));

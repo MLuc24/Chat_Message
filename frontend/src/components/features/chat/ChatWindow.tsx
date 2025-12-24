@@ -35,7 +35,7 @@ interface ChatWindowProps {
 export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall, onStartGroupVoiceCall, onStartGroupVideoCall }: ChatWindowProps) {
     const { currentMessages, sendMessage, isLoading, conversations, fetchConversations } = useChat(conversationId || undefined);
     const { loadConversationTheme } = useTheme();
-    const { defaultEmoji } = useDefaultEmoji(conversationId || '');
+    const { defaultEmoji, reloadDefaultEmoji } = useDefaultEmoji(conversationId || '');
     const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
     const [isMemberListOpen, setIsMemberListOpen] = useState(false);
     const [sharedMedia, setSharedMedia] = useState<Message[]>([]);
@@ -355,7 +355,11 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall,
                 {/* Chat Info Panel */}
                 <ChatInfoPanel
                     isOpen={isInfoPanelOpen}
-                    onClose={() => setIsInfoPanelOpen(false)}
+                    onClose={() => {
+                        setIsInfoPanelOpen(false);
+                        // Reload default emoji when panel closes (in case it was updated)
+                        reloadDefaultEmoji();
+                    }}
                     otherUser={recipient}
                     conversation={currentConversation || undefined}
                     conversationId={conversationId!}

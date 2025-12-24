@@ -5,9 +5,7 @@ import helmet from 'helmet';
 import * as compression from 'compression';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    bodyParser: false, // Disable body parser for proxy
-  });
+  const app = await NestFactory.create(AppModule);
 
   // Security
   app.use(helmet());

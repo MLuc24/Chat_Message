@@ -6,6 +6,7 @@ interface UseDefaultEmojiReturn {
     defaultEmoji: string;
     isLoading: boolean;
     updateDefaultEmoji: (emoji: string) => Promise<void>;
+    reloadDefaultEmoji: () => Promise<void>;
 }
 
 export function useDefaultEmoji(conversationId: string): UseDefaultEmojiReturn {
@@ -13,34 +14,37 @@ export function useDefaultEmoji(conversationId: string): UseDefaultEmojiReturn {
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
     // Load default emoji from settings
+    const loadDefaultEmoji = useCallback(async () => {
+        if (!conversationId) return;
+
+        setIsLoading(true);
+        try {
+            const settings = await chatService.getConversationSettings(conversationId);
+            setDefaultEmoji(settings.defaultEmoji || '👍');
+        } catch (error) {
+            console.error('Failed to load default emoji:', error);
+            // Keep default value on error
+        } finally {
+            setIsLoading(false);
+        }
+    }, [conversationId]);
+
     useEffect(() => {
-        let isMounted = true;
-
-        const loadDefaultEmoji = async () => {
-            if (!conversationId) return;
-
-            setIsLoading(true);
-            try {
-                const settings = await chatService.getConversationSettings(conversationId);
-                if (isMounted) {
-                    setDefaultEmoji(settings.defaultEmoji || '👍');
-                }
-            } catch (error) {
-                console.error('Failed to load default emoji:', error);
-                // Keep default value on error
-            } finally {
-                if (isMounted) {
-                    setIsLoading(false);
-                }
+        loadDefaultEmoji();
+        
+        // Listen for emoji updates from other components
+        const handleEmojiUpdate = (event: CustomEvent) => {
+            if (event.detail.conversationId === conversationId) {
+                setDefaultEmoji(event.detail.emoji);
             }
         };
-
-        loadDefaultEmoji();
-
+        
+        window.addEventListener('defaultEmojiUpdated', handleEmojiUpdate as EventListener);
+        
         return () => {
-            isMounted = false;
+            window.removeEventListener('defaultEmojiUpdated', handleEmojiUpdate as EventListener);
         };
-    }, [conversationId]);
+    }, [loadDefaultEmoji, conversationId]);
 
     // Update default emoji
     const updateDefaultEmoji = useCallback(async (emoji: string) => {
@@ -54,6 +58,11 @@ export function useDefaultEmoji(conversationId: string): UseDefaultEmojiReturn {
                 defaultEmoji: emoji,
             });
             setDefaultEmoji(emoji);
+            
+            // Broadcast emoji update event for realtime sync
+            window.dispatchEvent(new CustomEvent('defaultEmojiUpdated', {
+                detail: { conversationId, emoji }
+            }));
         } catch (error) {
             console.error('Failed to update default emoji:', error);
             throw error;
@@ -66,5 +75,6 @@ export function useDefaultEmoji(conversationId: string): UseDefaultEmojiReturn {
         defaultEmoji,
         isLoading,
         updateDefaultEmoji,
+        reloadDefaultEmoji: loadDefaultEmoji,
     };
 }

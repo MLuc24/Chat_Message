@@ -1,7 +1,7 @@
 // DefaultEmojiPicker - Modal to select default emoji for quick reactions
 import { memo, useState, useCallback, useMemo, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
-import { EMOJI_CATEGORIES, getFrequentEmojis, searchEmojis } from '../../../utils/emojiData';
+import { EMOJI_CATEGORIES, getFrequentEmojis, searchEmojis, addFrequentEmoji } from '../../../utils/emojiData';
 
 interface DefaultEmojiPickerProps {
     isOpen: boolean;
@@ -69,6 +69,8 @@ export const DefaultEmojiPicker = memo(function DefaultEmojiPicker({
         setIsLoading(true);
         try {
             await onSelect(selectedEmoji);
+            // Track the emoji as frequently used
+            addFrequentEmoji(selectedEmoji);
             onClose();
         } catch (error) {
             console.error('Failed to update emoji:', error);

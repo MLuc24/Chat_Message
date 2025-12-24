@@ -47,7 +47,7 @@ export function ChatCustomizeSection({
     const { nicknamesByConversation, loadNicknames, setNickname: setNicknameInStore } = useNicknameStore();
     const nicknames = nicknamesByConversation[conversation.id] || {};
     
-    const { defaultEmoji, updateDefaultEmoji } = useDefaultEmoji(conversation.id);
+    const { defaultEmoji, updateDefaultEmoji, reloadDefaultEmoji } = useDefaultEmoji(conversation.id);
     
     const { upload: uploadAvatar, isUploading: isUploadingAvatar } = useUpload({
         uploadType: 'avatar',
@@ -182,7 +182,8 @@ export function ChatCustomizeSection({
         {
             id: 'emoji',
             icon: FaceSmileIcon,
-            label: defaultEmoji,
+            label: 'Thay đổi biểu tượng cảm xúc',
+            emoji: defaultEmoji,
             onClick: () => setIsEmojiPickerOpen(true),
             disabled: false,
             isLoading: false,
@@ -242,7 +243,10 @@ export function ChatCustomizeSection({
                                             <IconComponent />
                                         )}
                                     </div>
-                                    <span className="text-sm font-medium">{item.label}</span>
+                                    <span className="text-sm font-medium flex-1 text-left">{item.label}</span>
+                                    {item.emoji && (
+                                        <span className="text-xl">{item.emoji}</span>
+                                    )}
                                 </button>
                             );
                         })}

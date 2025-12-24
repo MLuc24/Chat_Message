@@ -96,7 +96,7 @@ model ConversationSettings {
   sound          Boolean  @default(true)
   popups         Boolean  @default(true)
   hide           Boolean  @default(false)
-  defaultEmoji   String   @default("👍") @map("default_emoji")
+  defaultEmoji   String?  @map("default_emoji") @db.Text
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 

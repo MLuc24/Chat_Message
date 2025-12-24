@@ -1,6 +1,6 @@
 /**
  * Chat Theme CSS Variables
- * Theme áp dụng toàn diện cho chat window
+ * Enhanced theme system with smooth transitions and modern effects
  */
 
 :root {
@@ -8,16 +8,16 @@
   --chat-bubble-own: #0084ff;
   --chat-bubble-own-text: #ffffff;
   --chat-bubble-own-gradient: linear-gradient(135deg, #0084ff 0%, #0066cc 100%);
-  
+
   --chat-bubble-other: #f0f0f0;
   --chat-bubble-other-text: #050505;
   --chat-bubble-other-gradient: #f0f0f0;
-  
+
   --chat-background: #ffffff;
   --chat-background-gradient: #ffffff;
-  
+
   --chat-theme-pattern: linear-gradient(135deg, #0084ff 0%, #0066cc 100%);
-  
+
   /* UI Elements */
   --chat-icon-primary: #0084ff;
   --chat-icon-secondary: #65676b;
@@ -31,20 +31,164 @@
 }
 
 /* Smooth transitions for theme changes */
-.message-bubble {
-  transition: background 0.3s ease, color 0.3s ease;
+.message-bubble,
+.message-bubble-own,
+.message-bubble-other {
+  transition:
+    background 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced shadow effects for themed bubbles */
+.message-bubble-own {
+  box-shadow:
+    0 2px 8px rgba(0, 132, 255, 0.15),
+    0 1px 3px rgba(0, 132, 255, 0.1);
+}
+
+.message-bubble-own:hover {
+  box-shadow:
+    0 4px 12px rgba(0, 132, 255, 0.2),
+    0 2px 6px rgba(0, 132, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.message-bubble-other {
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.message-bubble-other:hover {
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 2px 4px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
 }
 
 /* Icon transitions */
 .chat-icon {
-  transition: color 0.3s ease;
+  transition:
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Optional: Add shadow effects for themed bubbles */
-.message-bubble-own {
-  box-shadow: 0 1px 2px rgba(0, 132, 255, 0.2);
+.chat-icon:hover {
+  transform: scale(1.1);
 }
 
-.message-bubble-other {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+/* Chat background transitions */
+.chat-window-background {
+  transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Theme change animation */
+@keyframes themeTransition {
+  0% {
+    opacity: 0.8;
+    transform: scale(0.98);
+  }
+
+  50% {
+    opacity: 0.9;
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.theme-transitioning {
+  animation: themeTransition 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth color transitions for all theme-dependent elements */
+* {
+  transition-property: background-color, color, border-color;
+  transition-duration: 0.3s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Button transitions */
+button,
+.button {
+  transition:
+    background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active,
+.button:active {
+  transform: scale(0.96);
+}
+
+/* Input transitions */
+input,
+textarea {
+  transition:
+    background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Gradient animation for special effects */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-gradient {
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+}
+
+/* Pulse effect for theme preview */
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Shimmer effect for loading states */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      transparent 100%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
 }

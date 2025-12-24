@@ -32,129 +32,129 @@ function formatFileSize(bytes: number): string {
 
 function getFileIcon(fileName: string, fileType: string) {
     const ext = fileName.split('.').pop()?.toLowerCase();
-    
+
     // PDF - Red with document lines
     if (ext === 'pdf' || fileType.includes('pdf')) {
         return (
             <svg className="w-7 h-7 text-red-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                <path d="M14 2v6h6M9 13h6M9 17h6M9 9h1" fill="white"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                <path d="M14 2v6h6M9 13h6M9 17h6M9 9h1" fill="white" />
             </svg>
         );
     }
-    
+
     // Word - Blue with 'W'
     if (['doc', 'docx'].includes(ext || '') || fileType.includes('word')) {
         return (
             <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="#2B579A"/>
-                <path d="M14 2v6h6" fill="#2B579A" opacity="0.7"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="#2B579A" />
+                <path d="M14 2v6h6" fill="#2B579A" opacity="0.7" />
                 <text x="12" y="17" fontSize="10" fontWeight="bold" fill="white" textAnchor="middle">W</text>
             </svg>
         );
     }
-    
+
     // Excel - Green with 'X'
     if (['xls', 'xlsx', 'csv'].includes(ext || '') || fileType.includes('excel') || fileType.includes('spreadsheet')) {
         return (
             <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="#217346"/>
-                <path d="M14 2v6h6" fill="#217346" opacity="0.7"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="#217346" />
+                <path d="M14 2v6h6" fill="#217346" opacity="0.7" />
                 <text x="12" y="17" fontSize="10" fontWeight="bold" fill="white" textAnchor="middle">X</text>
             </svg>
         );
     }
-    
+
     // PowerPoint - Orange with 'P'
     if (['ppt', 'pptx'].includes(ext || '') || fileType.includes('presentation')) {
         return (
             <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="#D24726"/>
-                <path d="M14 2v6h6" fill="#D24726" opacity="0.7"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="#D24726" />
+                <path d="M14 2v6h6" fill="#D24726" opacity="0.7" />
                 <text x="12" y="17" fontSize="10" fontWeight="bold" fill="white" textAnchor="middle">P</text>
             </svg>
         );
     }
-    
+
     // Archive - Purple with zipper
     if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext || '') || fileType.includes('zip') || fileType.includes('compressed')) {
         return (
             <svg className="w-7 h-7 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                <rect x="10" y="4" width="4" height="2" fill="white"/>
-                <rect x="10" y="7" width="4" height="2" fill="white"/>
-                <rect x="10" y="10" width="4" height="2" fill="white"/>
-                <circle cx="12" cy="15" r="2" fill="white"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                <rect x="10" y="4" width="4" height="2" fill="white" />
+                <rect x="10" y="7" width="4" height="2" fill="white" />
+                <rect x="10" y="10" width="4" height="2" fill="white" />
+                <circle cx="12" cy="15" r="2" fill="white" />
             </svg>
         );
     }
-    
+
     // Code files - Dark blue
     if (['js', 'jsx', 'ts', 'tsx', 'py', 'java', 'cpp', 'c', 'cs', 'php', 'rb', 'go', 'rs', 'swift'].includes(ext || '')) {
         return (
             <svg className="w-7 h-7 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                <path d="M9 13l2 2-2 2M13 13l2 2-2 2" stroke="white" strokeWidth="1.5" fill="none"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                <path d="M9 13l2 2-2 2M13 13l2 2-2 2" stroke="white" strokeWidth="1.5" fill="none" />
             </svg>
         );
     }
-    
+
     // Image files - Pink
     if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(ext || '') || fileType.includes('image')) {
         return (
             <svg className="w-7 h-7 text-pink-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                <circle cx="10" cy="11" r="2" fill="white"/>
-                <path d="M6 18l4-4 3 3 5-5v6H6z" fill="white"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                <circle cx="10" cy="11" r="2" fill="white" />
+                <path d="M6 18l4-4 3 3 5-5v6H6z" fill="white" />
             </svg>
         );
     }
-    
+
     // Video files - Red
     if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm'].includes(ext || '') || fileType.includes('video')) {
         return (
             <svg className="w-7 h-7 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                <path d="M10 10l6 4-6 4V10z" fill="white"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                <path d="M10 10l6 4-6 4V10z" fill="white" />
             </svg>
         );
     }
-    
+
     // Audio files - Teal
     if (['mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac'].includes(ext || '') || fileType.includes('audio')) {
         return (
             <svg className="w-7 h-7 text-teal-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                <path d="M15 11v6a2 2 0 1 1-2-2V9l4-1v3h-2z" fill="white"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                <path d="M15 11v6a2 2 0 1 1-2-2V9l4-1v3h-2z" fill="white" />
             </svg>
         );
     }
-    
+
     // Text files - Gray
     if (['txt', 'md', 'log'].includes(ext || '') || fileType.includes('text')) {
         return (
             <svg className="w-7 h-7 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                <path d="M8 12h8M8 16h8M8 8h2" stroke="white" strokeWidth="1.5"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                <path d="M8 12h8M8 16h8M8 8h2" stroke="white" strokeWidth="1.5" />
             </svg>
         );
     }
-    
+
     // JSON/XML - Yellow
     if (['json', 'xml', 'yaml', 'yml'].includes(ext || '')) {
         return (
             <svg className="w-7 h-7 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-                <path d="M8 10h8M10 13h6M8 16h8" stroke="white" strokeWidth="1.5"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                <path d="M8 10h8M10 13h6M8 16h8" stroke="white" strokeWidth="1.5" />
             </svg>
         );
     }
-    
+
     // Default file icon - Gray
     return (
         <svg className="w-7 h-7 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-            <path d="M14 2v6h6" fill="currentColor" opacity="0.5"/>
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+            <path d="M14 2v6h6" fill="currentColor" opacity="0.5" />
         </svg>
     );
 }
@@ -236,11 +236,10 @@ export const MessageItem = memo(function MessageItem({
             <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-[65%]`}>
                 {/* Message bubble */}
                 <div
-                    className={`rounded-2xl overflow-hidden ${
-                        isEmojiMessage 
+                    className={`rounded-2xl overflow-hidden transition-all duration-300 ${isEmojiMessage
                             ? '' // Không có padding và background cho emoji
                             : message.type === 'text'
-                                ? 'px-4 py-2.5'
+                                ? `px-4 py-2.5 ${isOwn ? 'message-bubble-own hover:shadow-xl' : 'message-bubble-other hover:shadow-lg'}`
                                 : (message.type === 'audio' || message.type === 'location')
                                     ? ''
                                     : 'p-1'
@@ -260,8 +259,13 @@ export const MessageItem = memo(function MessageItem({
                                     ? 'var(--chat-bubble-own-text)'
                                     : 'var(--chat-bubble-other-text)'
                                 : 'inherit',
-                        borderBottomRightRadius: isOwn && message.type === 'text' && !isEmojiMessage ? '4px' : undefined,
-                        borderBottomLeftRadius: !isOwn && message.type === 'text' && !isEmojiMessage ? '4px' : undefined,
+                        borderBottomRightRadius: isOwn && message.type === 'text' && !isEmojiMessage ? '6px' : undefined,
+                        borderBottomLeftRadius: !isOwn && message.type === 'text' && !isEmojiMessage ? '6px' : undefined,
+                        boxShadow: !isEmojiMessage && message.type === 'text'
+                            ? isOwn
+                                ? '0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08)'
+                                : '0 1px 4px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06)'
+                            : undefined,
                     }}
                 >
                     {/* Text message */}
@@ -331,16 +335,16 @@ export const MessageItem = memo(function MessageItem({
                     {message.type === 'audio' && (
                         <>
                             {message.mediaUrl ? (
-                                <div 
+                                <div
                                     className="flex items-center gap-3 px-4 py-3 min-w-[240px] rounded-2xl"
                                     style={{
-                                        background: isOwn 
+                                        background: isOwn
                                             ? 'var(--chat-bubble-own-gradient, var(--chat-bubble-own))'
                                             : 'var(--chat-bubble-other-gradient, var(--chat-bubble-other))',
                                     }}
                                 >
                                     {/* Play/Pause button */}
-                                    <button 
+                                    <button
                                         onClick={toggleAudioPlayback}
                                         className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors"
                                         style={{
@@ -354,18 +358,18 @@ export const MessageItem = memo(function MessageItem({
                                         }}
                                     >
                                         {isPlaying ? (
-                                            <svg 
+                                            <svg
                                                 className="w-5 h-5"
-                                                fill="currentColor" 
+                                                fill="currentColor"
                                                 viewBox="0 0 20 20"
                                                 style={{ color: isOwn ? 'var(--chat-bubble-own-text)' : 'var(--chat-bubble-other-text)' }}
                                             >
                                                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                                             </svg>
                                         ) : (
-                                            <svg 
+                                            <svg
                                                 className="w-5 h-5 ml-0.5"
-                                                fill="currentColor" 
+                                                fill="currentColor"
                                                 viewBox="0 0 20 20"
                                                 style={{ color: isOwn ? 'var(--chat-bubble-own-text)' : 'var(--chat-bubble-other-text)' }}
                                             >
@@ -383,13 +387,13 @@ export const MessageItem = memo(function MessageItem({
                                                 <div
                                                     key={idx}
                                                     className="w-1 rounded-full transition-colors"
-                                                    style={{ 
+                                                    style={{
                                                         height: `${height}%`,
-                                                        backgroundColor: isActive 
-                                                            ? isOwn 
+                                                        backgroundColor: isActive
+                                                            ? isOwn
                                                                 ? 'var(--chat-bubble-own-text)'
                                                                 : 'currentColor'
-                                                            : isOwn 
+                                                            : isOwn
                                                                 ? 'rgba(255,255,255,0.4)'
                                                                 : 'rgba(0,0,0,0.3)'
                                                     }}
@@ -399,7 +403,7 @@ export const MessageItem = memo(function MessageItem({
                                     </div>
 
                                     {/* Duration */}
-                                    <span 
+                                    <span
                                         className="text-xs font-medium opacity-90"
                                         style={{ color: isOwn ? 'var(--chat-bubble-own-text)' : 'var(--chat-bubble-other-text)' }}
                                     >
@@ -407,7 +411,7 @@ export const MessageItem = memo(function MessageItem({
                                     </span>
 
                                     {/* Audio element */}
-                                    <audio 
+                                    <audio
                                         ref={audioRef}
                                         src={message.mediaUrl}
                                         onTimeUpdate={handleAudioTimeUpdate}
@@ -481,35 +485,30 @@ export const MessageItem = memo(function MessageItem({
                                     href={message.fileUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`flex items-center gap-3 px-4 py-3 min-w-[240px] max-w-[280px] ${
-                                        isOwn ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-200 hover:bg-gray-300'
-                                    } rounded-2xl transition-colors`}
+                                    className={`flex items-center gap-3 px-4 py-3 min-w-[240px] max-w-[280px] ${isOwn ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-200 hover:bg-gray-300'
+                                        } rounded-2xl transition-colors`}
                                 >
                                     {/* File icon */}
-                                    <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center ${
-                                        isOwn ? 'bg-white/20' : 'bg-white'
-                                    }`}>
+                                    <div className={`flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center ${isOwn ? 'bg-white/20' : 'bg-white'
+                                        }`}>
                                         {getFileIcon(message.fileName || '', message.fileType || '')}
                                     </div>
 
                                     {/* File info */}
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-sm font-medium truncate ${
-                                            isOwn ? 'text-white' : 'text-gray-900'
-                                        }`}>
+                                        <p className={`text-sm font-medium truncate ${isOwn ? 'text-white' : 'text-gray-900'
+                                            }`}>
                                             {message.fileName || 'File'}
                                         </p>
-                                        <p className={`text-xs mt-0.5 ${
-                                            isOwn ? 'text-white/80' : 'text-gray-600'
-                                        }`}>
+                                        <p className={`text-xs mt-0.5 ${isOwn ? 'text-white/80' : 'text-gray-600'
+                                            }`}>
                                             {formatFileSize(message.fileSize || 0)}
                                         </p>
                                     </div>
 
                                     {/* Download icon */}
-                                    <svg className={`w-5 h-5 flex-shrink-0 ${
-                                        isOwn ? 'text-white' : 'text-gray-600'
-                                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className={`w-5 h-5 flex-shrink-0 ${isOwn ? 'text-white' : 'text-gray-600'
+                                        }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                     </svg>
                                 </a>
@@ -521,20 +520,19 @@ export const MessageItem = memo(function MessageItem({
 
                     {/* Grouped Media (multiple images/videos) */}
                     {message.type === 'media_group' && message.mediaItems && message.mediaItems.length > 0 && (
-                        <div className={`grid gap-1 max-w-md ${
-                            message.mediaItems.length === 1 ? 'grid-cols-1' :
-                            message.mediaItems.length === 2 ? 'grid-cols-2' :
-                            'grid-cols-3'
-                        }`}>
+                        <div className={`grid gap-1 max-w-md ${message.mediaItems.length === 1 ? 'grid-cols-1' :
+                                message.mediaItems.length === 2 ? 'grid-cols-2' :
+                                    'grid-cols-3'
+                            }`}>
                             {message.mediaItems.map((media, index) => (
-                                <div 
+                                <div
                                     key={index}
                                     className="relative aspect-square cursor-pointer overflow-hidden rounded-lg group bg-gray-100"
                                     onClick={() => onMediaClick?.(message)}
                                 >
                                     {media.type === 'image' ? (
                                         <>
-                                            <img 
+                                            <img
                                                 src={media.url}
                                                 alt=""
                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -555,7 +553,7 @@ export const MessageItem = memo(function MessageItem({
                                         </>
                                     ) : (
                                         <>
-                                            <video 
+                                            <video
                                                 src={media.url}
                                                 poster={media.thumbnailUrl}
                                                 className="w-full h-full object-cover"

@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Avatar } from '../../common/Avatar';
 import { Dropdown, DropdownItem, DropdownDivider } from '../../common/Dropdown';
+import { useNicknameStore } from '../../../stores/nicknameStore';
 import type { User } from '../../../types/user.types';
 import type { Conversation } from '../../../types/chat.types';
 
@@ -41,12 +42,15 @@ export const ChatHeader = memo(function ChatHeader({
     onLeaveGroup,
 }: ChatHeaderProps) {
     const isGroup = conversation?.type === 'group';
+    const { getDisplayName } = useNicknameStore();
     
     // For group: use group name and avatar
-    // For direct: use recipient info
+    // For direct: use recipient info with nickname if available
     const displayName = isGroup 
         ? (conversation?.name || 'Nhóm chat')
-        : (recipient?.name || 'User');
+        : recipient && conversation
+            ? getDisplayName(conversation.id, recipient.id, recipient.name)
+            : (recipient?.name || 'User');
     
     const displayAvatar = isGroup 
         ? conversation?.avatarUrl 

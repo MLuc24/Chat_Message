@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { 
     PencilIcon, 
     PhotoIcon, 
@@ -12,6 +12,9 @@ import {
 import { Modal } from '../../common/Modal';
 import { Avatar } from '../../common/Avatar';
 import { ThemeSelector } from '../theme/ThemeSelector';
+import { DefaultEmojiPicker } from './DefaultEmojiPicker';
+import { useNicknameStore } from '../../../stores/nicknameStore';
+import { useDefaultEmoji } from '../../../hooks/useDefaultEmoji';
 import type { Conversation } from '../../../types/chat.types';
 import type { User } from '../../../types/user.types';
 import { chatService } from '../../../services/api/chatService';
@@ -24,10 +27,6 @@ interface ChatCustomizeSectionProps {
     onConversationUpdate?: (updated: Partial<Conversation>) => void;
 }
 
-interface NicknameData {
-    [userId: string]: string;
-}
-
 export function ChatCustomizeSection({
     conversation,
     isGroup,
@@ -38,11 +37,17 @@ export function ChatCustomizeSection({
     const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
     const [isNicknameModalOpen, setIsNicknameModalOpen] = useState(false);
     const [isThemeSelectorOpen, setIsThemeSelectorOpen] = useState(false);
+    const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
     const [groupName, setGroupName] = useState(conversation.name || '');
-    const [nicknames, setNicknames] = useState<NicknameData>({});
     const [editingNickname, setEditingNickname] = useState<string | null>(null);
     const [tempNickname, setTempNickname] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isSavingNickname, setIsSavingNickname] = useState(false);
+    
+    const { nicknamesByConversation, loadNicknames, setNickname: setNicknameInStore } = useNicknameStore();
+    const nicknames = nicknamesByConversation[conversation.id] || {};
+    
+    const { defaultEmoji, updateDefaultEmoji } = useDefaultEmoji(conversation.id);
     
     const { upload: uploadAvatar, isUploading: isUploadingAvatar } = useUpload({
         uploadType: 'avatar',
@@ -60,6 +65,13 @@ export function ChatCustomizeSection({
             alert('Không thể tải lên ảnh. Vui lòng thử lại.');
         },
     });
+
+    // Load nicknames when nickname modal opens
+    useEffect(() => {
+        if (isNicknameModalOpen) {
+            loadNicknames(conversation.id);
+        }
+    }, [isNicknameModalOpen, conversation.id, loadNicknames]);
 
     // Handle rename group
     const handleRenameGroup = useCallback(async () => {
@@ -110,17 +122,20 @@ export function ChatCustomizeSection({
     const handleSaveNickname = useCallback(async (userId: string) => {
         const trimmedNickname = tempNickname.trim();
         
-        setNicknames(prev => ({
-            ...prev,
-            [userId]: trimmedNickname,
-        }));
-        
-        // TODO: Save nickname to backend when API is ready
-        // await chatService.updateNickname(conversation.id, userId, trimmedNickname);
-        
-        setEditingNickname(null);
-        setTempNickname('');
-    }, [tempNickname]);
+        setIsSavingNickname(true);
+        try {
+            // Save to store (which handles backend)
+            await setNicknameInStore(conversation.id, userId, trimmedNickname);
+            
+            setEditingNickname(null);
+            setTempNickname('');
+        } catch (error) {
+            console.error('Failed to save nickname:', error);
+            alert('Không thể lưu biệt danh. Vui lòng thử lại.');
+        } finally {
+            setIsSavingNickname(false);
+        }
+    }, [conversation.id, tempNickname, setNicknameInStore]);
 
     // Handle cancel nickname edit
     const handleCancelNickname = () => {
@@ -144,12 +159,15 @@ export function ChatCustomizeSection({
                     setGroupName(conversation.name || '');
                     setIsRenameModalOpen(true);
                 },
+                disabled: false,
+                isLoading: false,
             },
             {
                 id: 'avatar',
                 icon: PhotoIcon,
                 label: 'Thay đổi ảnh',
                 onClick: () => document.getElementById('group-avatar-input')?.click(),
+                disabled: false,
                 isLoading: isUploadingAvatar,
             },
         ] : []),
@@ -158,22 +176,24 @@ export function ChatCustomizeSection({
             icon: SwatchIcon,
             label: 'Đổi chủ đề',
             onClick: () => setIsThemeSelectorOpen(true),
+            disabled: false,
+            isLoading: false,
         },
         {
             id: 'emoji',
             icon: FaceSmileIcon,
-            label: 'Thay đổi biểu tượng cảm xúc',
-            onClick: () => {
-                // TODO: Implement emoji change
-                alert('Tính năng đang được phát triển');
-            },
-            disabled: true,
+            label: defaultEmoji,
+            onClick: () => setIsEmojiPickerOpen(true),
+            disabled: false,
+            isLoading: false,
         },
         {
             id: 'nickname',
             icon: () => <span className="text-sm font-bold w-5 h-5 flex items-center justify-center">Aa</span>,
             label: 'Chỉnh sửa biệt danh',
             onClick: () => setIsNicknameModalOpen(true),
+            disabled: false,
+            isLoading: false,
         },
     ];
 
@@ -313,22 +333,29 @@ export function ChatCustomizeSection({
                                             onChange={(e) => setTempNickname(e.target.value)}
                                             placeholder={member.name}
                                             maxLength={50}
-                                            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            disabled={isSavingNickname}
+                                            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                                             autoFocus
                                             onKeyDown={(e) => {
-                                                if (e.key === 'Enter') handleSaveNickname(member.id);
-                                                if (e.key === 'Escape') handleCancelNickname();
+                                                if (e.key === 'Enter' && !isSavingNickname) handleSaveNickname(member.id);
+                                                if (e.key === 'Escape' && !isSavingNickname) handleCancelNickname();
                                             }}
                                         />
                                         <button
                                             onClick={() => handleSaveNickname(member.id)}
-                                            className="p-1 text-green-600 hover:bg-green-50 rounded"
+                                            disabled={isSavingNickname}
+                                            className="p-1 text-green-600 hover:bg-green-50 rounded disabled:opacity-50"
                                         >
-                                            <CheckIcon className="w-4 h-4" />
+                                            {isSavingNickname ? (
+                                                <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                                <CheckIcon className="w-4 h-4" />
+                                            )}
                                         </button>
                                         <button
                                             onClick={handleCancelNickname}
-                                            className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                            disabled={isSavingNickname}
+                                            className="p-1 text-red-600 hover:bg-red-50 rounded disabled:opacity-50"
                                         >
                                             <XMarkIcon className="w-4 h-4" />
                                         </button>
@@ -367,6 +394,14 @@ export function ChatCustomizeSection({
                 isOpen={isThemeSelectorOpen}
                 onClose={() => setIsThemeSelectorOpen(false)}
                 conversationId={conversation.id}
+            />
+
+            {/* Default Emoji Picker Modal */}
+            <DefaultEmojiPicker
+                isOpen={isEmojiPickerOpen}
+                currentEmoji={defaultEmoji}
+                onSelect={updateDefaultEmoji}
+                onClose={() => setIsEmojiPickerOpen(false)}
             />
         </>
     );

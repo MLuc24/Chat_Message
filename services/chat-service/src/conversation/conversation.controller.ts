@@ -10,7 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ConversationService } from './conversation.service';
-import { CreateConversationDto, UpdateConversationDto, AddMemberDto } from './dto';
+import { CreateConversationDto, UpdateConversationDto, AddMemberDto, SetNicknameDto } from './dto';
 import { UpdateConversationSettingsDto } from './dto/update-settings.dto';
 
 @Controller('conversations')
@@ -91,5 +91,36 @@ export class ConversationController {
     @Body() updateDto: UpdateConversationSettingsDto,
   ) {
     return this.conversationService.updateConversationSettings(conversationId, userId, updateDto);
+  }
+
+  @Get(':id/nicknames')
+  async getNicknames(
+    @Param('id') conversationId: string,
+    @Headers('x-user-id') userId: string,
+  ) {
+    return this.conversationService.getNicknames(conversationId, userId);
+  }
+
+  @Post(':id/nicknames')
+  async setNickname(
+    @Param('id') conversationId: string,
+    @Headers('x-user-id') userId: string,
+    @Body() setNicknameDto: SetNicknameDto,
+  ) {
+    return this.conversationService.setNickname(
+      conversationId,
+      userId,
+      setNicknameDto.targetUserId,
+      setNicknameDto.nickname,
+    );
+  }
+
+  @Delete(':id/nicknames/:targetUserId')
+  async deleteNickname(
+    @Param('id') conversationId: string,
+    @Param('targetUserId') targetUserId: string,
+    @Headers('x-user-id') userId: string,
+  ) {
+    return this.conversationService.deleteNickname(conversationId, userId, targetUserId);
   }
 }

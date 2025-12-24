@@ -9,6 +9,8 @@ import { GroupMemberList } from './GroupMemberList';
 import { EmptyState } from '../../common/EmptyState';
 import { useChat } from '../../../hooks/useChat';
 import { useTheme } from '../../../hooks/useTheme';
+import { useDefaultEmoji } from '../../../hooks/useDefaultEmoji';
+import { NicknameProvider } from '../../../contexts/NicknameContext';
 import { chatService } from '../../../services/api/chatService';
 import { uploadService } from '../../../services/api/uploadService';
 import type { SendMessageDto, Message, MediaItem } from '../../../types/chat.types';
@@ -33,6 +35,7 @@ interface ChatWindowProps {
 export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall, onStartGroupVoiceCall, onStartGroupVideoCall }: ChatWindowProps) {
     const { currentMessages, sendMessage, isLoading, conversations, fetchConversations } = useChat(conversationId || undefined);
     const { loadConversationTheme } = useTheme();
+    const { defaultEmoji } = useDefaultEmoji(conversationId || '');
     const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
     const [isMemberListOpen, setIsMemberListOpen] = useState(false);
     const [sharedMedia, setSharedMedia] = useState<Message[]>([]);
@@ -303,72 +306,75 @@ export function ChatWindow({ conversationId, onStartVoiceCall, onStartVideoCall,
 
     return (
         <div className="flex h-full relative">
-            {/* Main Chat Area */}
-            <div className="flex flex-col flex-1 min-w-0">
-                {/* Chat Header */}
-                <ChatHeader
-                    recipient={recipient}
-                    conversation={currentConversation || undefined}
-                    onVoiceCall={handleVoiceCall}
-                    onVideoCall={handleVideoCall}
-                    onViewInfo={() => setIsInfoPanelOpen(!isInfoPanelOpen)}
-                    onViewMembers={() => setIsMemberListOpen(true)}
-                    onLeaveGroup={async () => {
-                        if (currentConversation && currentUserId) {
-                            try {
-                                await chatService.leaveGroup(currentConversation.id);
-                                await fetchConversations();
-                            } catch (error) {
-                                console.error('Failed to leave group:', error);
+            <NicknameProvider conversationId={conversationId}>
+                {/* Main Chat Area */}
+                <div className="flex flex-col flex-1 min-w-0">
+                    {/* Chat Header */}
+                    <ChatHeader
+                        recipient={recipient}
+                        conversation={currentConversation || undefined}
+                        onVoiceCall={handleVoiceCall}
+                        onVideoCall={handleVideoCall}
+                        onViewInfo={() => setIsInfoPanelOpen(!isInfoPanelOpen)}
+                        onViewMembers={() => setIsMemberListOpen(true)}
+                        onLeaveGroup={async () => {
+                            if (currentConversation && currentUserId) {
+                                try {
+                                    await chatService.leaveGroup(currentConversation.id);
+                                    await fetchConversations();
+                                } catch (error) {
+                                    console.error('Failed to leave group:', error);
+                                }
                             }
-                        }
-                    }}
-                />
+                        }}
+                    />
 
-                {/* Messages */}
-                <MessageList
-                    messages={Array.isArray(currentMessages) ? currentMessages : []}
-                    conversation={currentConversation || undefined}
+                    {/* Messages */}
+                    <MessageList
+                        messages={Array.isArray(currentMessages) ? currentMessages : []}
+                        conversation={currentConversation || undefined}
+                        otherUser={recipient}
+                        isTyping={false}
+                        uploadingFiles={uploadingFiles}
+                    />
+
+                    {/* Input */}
+                    <ChatInput
+                        onSend={handleSendMessage}
+                        onSendMedia={handleSendMedia}
+                        onSendMediaGroup={handleSendMediaGroup}
+                        onSendVoice={handleSendVoice}
+                        onSendLocation={handleSendLocation}
+                        onSendFile={handleSendFile}
+                        disabled={isLoading}
+                        onUploadingFilesChange={setUploadingFiles}
+                        defaultEmoji={defaultEmoji}
+                    />
+                </div>
+
+                {/* Chat Info Panel */}
+                <ChatInfoPanel
+                    isOpen={isInfoPanelOpen}
+                    onClose={() => setIsInfoPanelOpen(false)}
                     otherUser={recipient}
-                    isTyping={false}
-                    uploadingFiles={uploadingFiles}
+                    conversation={currentConversation || undefined}
+                    conversationId={conversationId!}
+                    sharedMedia={sharedMedia}
+                    sharedDocuments={sharedDocuments}
+                    onConversationUpdate={() => fetchConversations()}
                 />
 
-                {/* Input */}
-                <ChatInput
-                    onSend={handleSendMessage}
-                    onSendMedia={handleSendMedia}
-                    onSendMediaGroup={handleSendMediaGroup}
-                    onSendVoice={handleSendVoice}
-                    onSendLocation={handleSendLocation}
-                    onSendFile={handleSendFile}
-                    disabled={isLoading}
-                    onUploadingFilesChange={setUploadingFiles}
-                />
-            </div>
-
-            {/* Chat Info Panel */}
-            <ChatInfoPanel
-                isOpen={isInfoPanelOpen}
-                onClose={() => setIsInfoPanelOpen(false)}
-                otherUser={recipient}
-                conversation={currentConversation || undefined}
-                conversationId={conversationId!}
-                sharedMedia={sharedMedia}
-                sharedDocuments={sharedDocuments}
-                onConversationUpdate={() => fetchConversations()}
-            />
-
-            {/* Group Member List Modal */}
-            {currentConversation?.type === 'group' && (
-                <GroupMemberList
-                    conversation={currentConversation}
-                    isOpen={isMemberListOpen}
-                    onClose={() => setIsMemberListOpen(false)}
-                    onMemberAdded={fetchConversations}
-                    onMemberRemoved={fetchConversations}
-                />
-            )}
+                {/* Group Member List Modal */}
+                {currentConversation?.type === 'group' && (
+                    <GroupMemberList
+                        conversation={currentConversation}
+                        isOpen={isMemberListOpen}
+                        onClose={() => setIsMemberListOpen(false)}
+                        onMemberAdded={fetchConversations}
+                        onMemberRemoved={fetchConversations}
+                    />
+                )}
+            </NicknameProvider>
         </div>
     );
 }

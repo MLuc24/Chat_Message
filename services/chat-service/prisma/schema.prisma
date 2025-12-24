@@ -96,6 +96,7 @@ model ConversationSettings {
   sound          Boolean  @default(true)
   popups         Boolean  @default(true)
   hide           Boolean  @default(false)
+  defaultEmoji   String   @default("👍") @map("default_emoji")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
@@ -103,4 +104,20 @@ model ConversationSettings {
   @@map("conversation_settings")
   @@index([userId])
   @@index([conversationId])
+}
+
+model Nickname {
+  id             String   @id @default(uuid())
+  conversationId String   @map("conversation_id")
+  userId         String   @map("user_id") // User who set the nickname
+  targetUserId   String   @map("target_user_id") // User being nicknamed
+  nickname       String
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@unique([conversationId, userId, targetUserId])
+  @@map("nicknames")
+  @@index([conversationId])
+  @@index([userId])
+  @@index([targetUserId])
 }

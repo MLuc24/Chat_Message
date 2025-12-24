@@ -5,7 +5,6 @@ import { useEffect } from 'react';
 import { AppRoutes } from './routes';
 import { useAuthStore } from './stores/authStore';
 import { useWebSocket } from './hooks/useWebSocket';
-import { useTheme } from './hooks/useTheme';
 
 function App() {
   const initAuth = useAuthStore((state) => state.initAuth);

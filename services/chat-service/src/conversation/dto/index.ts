@@ -32,3 +32,5 @@ export class AddMemberDto {
   @IsString()
   userId: string;
 }
+
+export * from './nickname.dto';

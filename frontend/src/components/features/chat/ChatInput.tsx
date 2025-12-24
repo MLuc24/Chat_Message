@@ -28,6 +28,7 @@ interface ChatInputProps {
     onSendFile?: (fileUrl: string, fileName: string, fileSize: number, fileType: string) => void;
     disabled?: boolean;
     onUploadingFilesChange?: (files: UploadingFile[]) => void;
+    defaultEmoji?: string;
 }
 
 interface UploadingFile {
@@ -38,7 +39,7 @@ interface UploadingFile {
     type: 'image' | 'video' | 'file';
 }
 
-export function ChatInput({ onSend, onSendMedia, onSendMediaGroup, onSendVoice, onSendLocation, onSendFile, disabled, onUploadingFilesChange }: ChatInputProps) {
+export function ChatInput({ onSend, onSendMedia, onSendMediaGroup, onSendVoice, onSendLocation, onSendFile, disabled, onUploadingFilesChange, defaultEmoji = '👍' }: ChatInputProps) {
     const [message, setMessage] = useState('');
     const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -357,7 +358,7 @@ export function ChatInput({ onSend, onSendMedia, onSendMediaGroup, onSendVoice, 
                     />
                 </div>
 
-                {/* Send button or Thumbs up */}
+                {/* Send button or Quick Emoji */}
                 {message.trim() ? (
                     <button
                         type="submit"
@@ -373,15 +374,12 @@ export function ChatInput({ onSend, onSendMedia, onSendMediaGroup, onSendVoice, 
                 ) : (
                     <button
                         type="button"
-                        className="hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 rounded-full p-1.5 chat-icon"
-                        style={{ color: 'var(--chat-icon-primary)' }}
-                        title="Send like"
-                        onClick={() => onSend('👍')}
+                        className="hover:bg-blue-50 transition-all flex-shrink-0 disabled:opacity-50 rounded-full p-2 text-2xl"
+                        title={`Send ${defaultEmoji}`}
+                        onClick={() => onSend(defaultEmoji)}
                         disabled={disabled || uploadingFiles.length > 0}
                     >
-                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" />
-                        </svg>
+                        {defaultEmoji}
                     </button>
                 )}
             </div>

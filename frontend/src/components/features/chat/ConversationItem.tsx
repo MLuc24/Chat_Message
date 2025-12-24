@@ -1,5 +1,6 @@
-import { memo } from 'react';
+import { memo, useEffect } from 'react';
 import { Avatar } from '../../common/Avatar';
+import { useNicknameStore } from '../../../stores/nicknameStore';
 import type { Conversation } from '../../../types/chat.types';
 
 interface ConversationItemProps {
@@ -40,6 +41,12 @@ export const ConversationItem = memo(function ConversationItem({
 }: ConversationItemProps) {
     const unreadCount = conversation.unreadCount || 0;
     const lastMessage = conversation.lastMessage;
+    const { loadNicknames, getDisplayName } = useNicknameStore();
+
+    // Pre-load nicknames for this conversation
+    useEffect(() => {
+        loadNicknames(conversation.id);
+    }, [conversation.id, loadNicknames]);
 
     // Get current user ID to exclude from participants
     const currentUserId = localStorage.getItem('user') 
@@ -51,10 +58,12 @@ export const ConversationItem = memo(function ConversationItem({
         (p) => p.id !== currentUserId
     );
 
-    // Display name: group name or other participant's name
+    // Display name: group name or other participant's name (with nickname)
     const displayName = conversation.type === 'group'
         ? (conversation.name || 'Group Chat')
-        : (otherParticipant?.name || 'Direct Chat');
+        : otherParticipant
+            ? getDisplayName(conversation.id, otherParticipant.id, otherParticipant.name)
+            : 'Direct Chat';
 
     // Avatar: use group avatar or other participant's avatar
     const avatarUrl = conversation.type === 'group'

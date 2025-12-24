@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateConversationSettingsDto {
@@ -21,4 +21,9 @@ export class UpdateConversationSettingsDto {
   @IsBoolean()
   @IsOptional()
   hide?: boolean;
+
+  @ApiPropertyOptional({ description: 'Default emoji for quick reactions', example: '👍' })
+  @IsString()
+  @IsOptional()
+  defaultEmoji?: string;
 }

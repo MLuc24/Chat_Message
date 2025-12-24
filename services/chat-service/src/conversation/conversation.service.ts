@@ -372,6 +372,7 @@ export class ConversationService {
       sound?: boolean;
       popups?: boolean;
       hide?: boolean;
+      defaultEmoji?: string;
     },
   ) {
     // Check membership
@@ -405,5 +406,125 @@ export class ConversationService {
     });
 
     return settings;
+  }
+
+  // Nickname methods
+  async setNickname(
+    conversationId: string,
+    userId: string,
+    targetUserId: string,
+    nickname: string,
+  ) {
+    // Check membership
+    const member = await this.prisma.conversationMember.findUnique({
+      where: {
+        conversationId_userId: {
+          conversationId,
+          userId,
+        },
+      },
+    });
+
+    if (!member) {
+      throw new ForbiddenException('Not a member of this conversation');
+    }
+
+    // Check if target user is in conversation
+    const targetMember = await this.prisma.conversationMember.findUnique({
+      where: {
+        conversationId_userId: {
+          conversationId,
+          userId: targetUserId,
+        },
+      },
+    });
+
+    if (!targetMember) {
+      throw new BadRequestException('Target user is not in this conversation');
+    }
+
+    // Upsert nickname
+    const nicknameRecord = await this.prisma.nickname.upsert({
+      where: {
+        conversationId_userId_targetUserId: {
+          conversationId,
+          userId,
+          targetUserId,
+        },
+      },
+      create: {
+        conversationId,
+        userId,
+        targetUserId,
+        nickname: nickname.trim(),
+      },
+      update: {
+        nickname: nickname.trim(),
+      },
+    });
+
+    return nicknameRecord;
+  }
+
+  async getNicknames(conversationId: string, userId: string) {
+    // Check membership
+    const member = await this.prisma.conversationMember.findUnique({
+      where: {
+        conversationId_userId: {
+          conversationId,
+          userId,
+        },
+      },
+    });
+
+    if (!member) {
+      throw new ForbiddenException('Not a member of this conversation');
+    }
+
+    // Get all nicknames set by this user in this conversation
+    const nicknames = await this.prisma.nickname.findMany({
+      where: {
+        conversationId,
+        userId,
+      },
+    });
+
+    // Convert to map format { targetUserId: nickname }
+    const nicknameMap: Record<string, string> = {};
+    nicknames.forEach((n) => {
+      nicknameMap[n.targetUserId] = n.nickname;
+    });
+
+    return nicknameMap;
+  }
+
+  async deleteNickname(
+    conversationId: string,
+    userId: string,
+    targetUserId: string,
+  ) {
+    // Check membership
+    const member = await this.prisma.conversationMember.findUnique({
+      where: {
+        conversationId_userId: {
+          conversationId,
+          userId,
+        },
+      },
+    });
+
+    if (!member) {
+      throw new ForbiddenException('Not a member of this conversation');
+    }
+
+    await this.prisma.nickname.deleteMany({
+      where: {
+        conversationId,
+        userId,
+        targetUserId,
+      },
+    });
+
+    return { message: 'Nickname deleted' };
   }
 }

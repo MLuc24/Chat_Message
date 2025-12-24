@@ -102,6 +102,7 @@ class ChatService {
         sound: boolean;
         popups: boolean;
         hide: boolean;
+        defaultEmoji: string;
     }> {
         const { data } = await http.get(
             `${API_ENDPOINTS.CHAT.CONVERSATIONS}/${conversationId}/settings`
@@ -116,11 +117,37 @@ class ChatService {
             sound?: boolean;
             popups?: boolean;
             hide?: boolean;
+            defaultEmoji?: string;
         }
     ): Promise<void> {
         await http.put(
             `${API_ENDPOINTS.CHAT.CONVERSATIONS}/${conversationId}/settings`,
             settings
+        );
+    }
+
+    // Nickname methods
+    async getNicknames(conversationId: string): Promise<Record<string, string>> {
+        const { data } = await http.get<Record<string, string>>(
+            `${API_ENDPOINTS.CHAT.CONVERSATIONS}/${conversationId}/nicknames`
+        );
+        return data;
+    }
+
+    async setNickname(
+        conversationId: string,
+        targetUserId: string,
+        nickname: string
+    ): Promise<void> {
+        await http.post(
+            `${API_ENDPOINTS.CHAT.CONVERSATIONS}/${conversationId}/nicknames`,
+            { targetUserId, nickname }
+        );
+    }
+
+    async deleteNickname(conversationId: string, targetUserId: string): Promise<void> {
+        await http.delete(
+            `${API_ENDPOINTS.CHAT.CONVERSATIONS}/${conversationId}/nicknames/${targetUserId}`
         );
     }
 }

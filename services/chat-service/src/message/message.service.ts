@@ -3,15 +3,19 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { StorageService } from '../storage/storage.service';
-import { SendMessageDto, UpdateMessageDto } from './dto';
+import { SendMessageDto, UpdateMessageDto, AddReactionDto, MessageReactionDto } from './dto';
 import { Prisma } from '.prisma/client';
 
 @Injectable()
 export class MessageService {
+  private readonly logger = new Logger(MessageService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
@@ -48,6 +52,17 @@ export class MessageService {
             userId: true,
             status: true,
             timestamp: true,
+          },
+        },
+        reactions: {
+          select: {
+            id: true,
+            emoji: true,
+            userId: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: 'asc',
           },
         },
       },
@@ -97,6 +112,14 @@ export class MessageService {
       data: messageData,
       include: {
         statuses: true,
+        reactions: {
+          select: {
+            id: true,
+            emoji: true,
+            userId: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
@@ -337,6 +360,175 @@ export class MessageService {
     });
 
     return documentMessages;
+  }
+
+  /**
+   * Add reaction to message
+   * @throws NotFoundException if message not found
+   * @throws ForbiddenException if user not member of conversation
+   */
+  async addReaction(
+    messageId: string,
+    userId: string,
+    dto: AddReactionDto,
+  ): Promise<MessageReactionDto> {
+    this.logger.log(`Adding reaction: user=${userId}, message=${messageId}, emoji=${dto.emoji}`);
+
+    // Get message and check if it exists
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: { conversationId: true, isDeleted: true },
+    });
+
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+
+    if (message.isDeleted) {
+      throw new BadRequestException('Cannot react to deleted message');
+    }
+
+    // Check membership
+    await this.checkMembership(message.conversationId, userId);
+
+    // Check if reaction already exists (idempotent)
+    const existingReaction = await this.prisma.messageReaction.findUnique({
+      where: {
+        messageId_userId_emoji: {
+          messageId,
+          userId,
+          emoji: dto.emoji,
+        },
+      },
+    });
+
+    if (existingReaction) {
+      this.logger.debug(`Reaction already exists, returning existing`);
+      return new MessageReactionDto(existingReaction);
+    }
+
+    // Create reaction
+    const reaction = await this.prisma.messageReaction.create({
+      data: {
+        messageId,
+        userId,
+        emoji: dto.emoji,
+      },
+    });
+
+    this.logger.log(`Reaction added: ${reaction.id}`);
+
+    // Get conversation members for broadcasting
+    const members = await this.prisma.conversationMember.findMany({
+      where: { conversationId: message.conversationId },
+      select: { userId: true },
+    });
+    const memberIds = members.map((m) => m.userId);
+
+    // Publish event to Redis for realtime service
+    await this.redis.publishReaction(
+      message.conversationId,
+      memberIds,
+      {
+        messageId,
+        conversationId: message.conversationId,
+        emoji: dto.emoji,
+        userId,
+        action: 'add',
+        createdAt: reaction.createdAt.toISOString(),
+      },
+    );
+
+    return new MessageReactionDto(reaction);
+  }
+
+  /**
+   * Remove reaction from message
+   * @throws NotFoundException if message not found
+   * @throws ForbiddenException if user not member of conversation
+   */
+  async removeReaction(
+    messageId: string,
+    userId: string,
+    emoji: string,
+  ): Promise<void> {
+    this.logger.log(`Removing reaction: user=${userId}, message=${messageId}, emoji=${emoji}`);
+
+    // Get message and check if it exists
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: { conversationId: true },
+    });
+
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+
+    // Check membership
+    await this.checkMembership(message.conversationId, userId);
+
+    // Delete reaction
+    await this.prisma.messageReaction.deleteMany({
+      where: {
+        messageId,
+        userId,
+        emoji,
+      },
+    });
+
+    this.logger.log(`Reaction removed`);
+
+    // Get conversation members for broadcasting
+    const members = await this.prisma.conversationMember.findMany({
+      where: { conversationId: message.conversationId },
+      select: { userId: true },
+    });
+    const memberIds = members.map((m) => m.userId);
+
+    // Publish event to Redis for realtime service
+    await this.redis.publishReaction(
+      message.conversationId,
+      memberIds,
+      {
+        messageId,
+        conversationId: message.conversationId,
+        emoji,
+        userId,
+        action: 'remove',
+        createdAt: new Date().toISOString(),
+      },
+    );
+  }
+
+  /**
+   * Get all reactions for a message
+   * @throws NotFoundException if message not found
+   * @throws ForbiddenException if user not member of conversation
+   */
+  async getMessageReactions(
+    messageId: string,
+    userId: string,
+  ): Promise<MessageReactionDto[]> {
+    // Get message and check if it exists
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: { conversationId: true },
+    });
+
+    if (!message) {
+      throw new NotFoundException('Message not found');
+    }
+
+    // Check membership
+    await this.checkMembership(message.conversationId, userId);
+
+    // Get reactions
+    const reactions = await this.prisma.messageReaction.findMany({
+      where: { messageId },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return reactions.map((r) => new MessageReactionDto(r));
   }
 
   private async createMessageStatus(

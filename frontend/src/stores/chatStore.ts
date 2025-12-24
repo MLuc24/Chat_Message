@@ -12,7 +12,8 @@ import type {
     SendMessageDto,
     MemberAddedEvent,
     MemberRemovedEvent,
-    GroupUpdatedEvent 
+    GroupUpdatedEvent,
+    MessageReactionEvent
 } from '@/types/chat.types';
 
 interface ChatState {
@@ -41,6 +42,10 @@ interface ChatState {
     handleMemberAdded: (event: MemberAddedEvent) => void;
     handleMemberRemoved: (event: MemberRemovedEvent) => void;
     handleGroupUpdated: (event: GroupUpdatedEvent) => void;
+    
+    // Reaction actions
+    toggleReaction: (messageId: string, emoji: string) => Promise<void>;
+    handleReactionEvent: (event: MessageReactionEvent) => void;
 }
 
 export const useChatStore = create<ChatState>()(
@@ -473,6 +478,100 @@ export const useChatStore = create<ChatState>()(
             socketManager.on(WS_EVENTS.GROUP_UPDATED, (event: GroupUpdatedEvent) => {
                 console.log('[chatStore] Group updated event:', event);
                 get().handleGroupUpdated(event);
+            });
+
+            // Listen for reaction events
+            socketManager.on(WS_EVENTS.MESSAGE_REACTION, (event: MessageReactionEvent) => {
+                console.log('[chatStore] Message reaction event:', event);
+                get().handleReactionEvent(event);
+            });
+        },
+
+        // Toggle reaction on a message
+        toggleReaction: async (messageId: string, emoji: string) => {
+            const currentUserId = useAuthStore.getState().user?.id;
+            if (!currentUserId) return;
+
+            // Find the message in all conversations
+            let targetMessage: Message | undefined;
+            let conversationId: string | undefined;
+
+            const { messages } = get();
+            for (const [convId, msgs] of Object.entries(messages)) {
+                const msg = msgs.find((m) => m.id === messageId);
+                if (msg) {
+                    targetMessage = msg;
+                    conversationId = convId;
+                    break;
+                }
+            }
+
+            if (!targetMessage || !conversationId) return;
+
+            // Check if user already reacted with this emoji
+            const hasReacted = targetMessage.reactions?.some(
+                (r) => r.userId === currentUserId && r.emoji === emoji
+            );
+
+            try {
+                if (hasReacted) {
+                    // Remove reaction
+                    await chatService.removeReaction(messageId, emoji);
+                } else {
+                    // Add reaction
+                    await chatService.addReaction(messageId, emoji);
+                }
+
+                // Optimistic update - will be confirmed by WebSocket event
+            } catch (error) {
+                console.error('[chatStore] Failed to toggle reaction:', error);
+                set({ error: 'Failed to update reaction' });
+            }
+        },
+
+        // Handle reaction event from WebSocket
+        handleReactionEvent: (event: MessageReactionEvent) => {
+            const { messageId, emoji, userId, action, conversationId, createdAt } = event;
+
+            set((state) => {
+                const conversationMessages = state.messages[conversationId] || [];
+                
+                return {
+                    messages: {
+                        ...state.messages,
+                        [conversationId]: conversationMessages.map((msg) => {
+                            if (msg.id !== messageId) return msg;
+
+                            const reactions = msg.reactions || [];
+                            
+                            if (action === 'add') {
+                                // Add new reaction
+                                const existingIndex = reactions.findIndex(
+                                    (r) => r.userId === userId && r.emoji === emoji
+                                );
+                                
+                                if (existingIndex === -1) {
+                                    return {
+                                        ...msg,
+                                        reactions: [
+                                            ...reactions,
+                                            { emoji, userId, createdAt }
+                                        ]
+                                    };
+                                }
+                                return msg;
+                            } else {
+                                // Remove reaction
+                                return {
+                                    ...msg,
+                                    reactions: reactions.filter(
+                                        (r) => !(r.userId === userId && r.emoji === emoji)
+                                    )
+                                };
+                            }
+                        })
+                    }
+                };
             });
         },
     }))

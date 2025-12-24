@@ -78,6 +78,29 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     );
   }
 
+  // Reaction events
+  async publishJson(channel: string, data: any): Promise<void> {
+    await this.publisher.publish(channel, JSON.stringify(data));
+  }
+
+  async publishReaction(
+    conversationId: string,
+    memberIds: string[],
+    data: {
+      messageId: string;
+      conversationId: string;
+      emoji: string;
+      userId: string;
+      action: 'add' | 'remove';
+      createdAt: string;
+    },
+  ): Promise<void> {
+    await this.publisher.publish(
+      `conversation:${conversationId}`,
+      JSON.stringify({ type: 'message_reaction', data, memberIds }),
+    );
+  }
+
   getClient(): Redis {
     return this.client;
   }

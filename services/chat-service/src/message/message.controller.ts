@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiHeader } from '@nestjs/swagger';
 import { MessageService } from './message.service';
-import { SendMessageDto, UpdateMessageDto } from './dto';
+import { SendMessageDto, UpdateMessageDto, AddReactionDto, MessageReactionDto } from './dto';
 import { UploadService } from '../common/services/upload.service';
 import {
   GenerateUploadSignatureDto,
@@ -124,5 +124,51 @@ export class MessageController {
     @Headers('x-user-id') userId: string,
   ) {
     return this.messageService.markConversationAsRead(conversationId, userId);
+  }
+
+  // ==================== Message Reactions ====================
+
+  @Post('messages/:messageId/reactions')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Add reaction to message' })
+  @ApiResponse({ status: 201, type: MessageReactionDto, description: 'Reaction added' })
+  @ApiResponse({ status: 400, description: 'Invalid emoji or deleted message' })
+  @ApiResponse({ status: 403, description: 'User not member of conversation' })
+  @ApiResponse({ status: 404, description: 'Message not found' })
+  @ApiHeader({ name: 'x-user-id', required: true })
+  async addReaction(
+    @Param('messageId') messageId: string,
+    @Headers('x-user-id') userId: string,
+    @Body() dto: AddReactionDto,
+  ): Promise<MessageReactionDto> {
+    return this.messageService.addReaction(messageId, userId, dto);
+  }
+
+  @Delete('messages/:messageId/reactions')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remove reaction from message' })
+  @ApiResponse({ status: 204, description: 'Reaction removed' })
+  @ApiResponse({ status: 403, description: 'User not member of conversation' })
+  @ApiResponse({ status: 404, description: 'Message not found' })
+  @ApiHeader({ name: 'x-user-id', required: true })
+  async removeReaction(
+    @Param('messageId') messageId: string,
+    @Headers('x-user-id') userId: string,
+    @Body() dto: AddReactionDto,
+  ): Promise<void> {
+    return this.messageService.removeReaction(messageId, userId, dto.emoji);
+  }
+
+  @Get('messages/:messageId/reactions')
+  @ApiOperation({ summary: 'Get all reactions for a message' })
+  @ApiResponse({ status: 200, type: [MessageReactionDto] })
+  @ApiResponse({ status: 403, description: 'User not member of conversation' })
+  @ApiResponse({ status: 404, description: 'Message not found' })
+  @ApiHeader({ name: 'x-user-id', required: true })
+  async getMessageReactions(
+    @Param('messageId') messageId: string,
+    @Headers('x-user-id') userId: string,
+  ): Promise<MessageReactionDto[]> {
+    return this.messageService.getMessageReactions(messageId, userId);
   }
 }

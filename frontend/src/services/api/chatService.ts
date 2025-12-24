@@ -150,6 +150,28 @@ class ChatService {
             `${API_ENDPOINTS.CHAT.CONVERSATIONS}/${conversationId}/nicknames/${targetUserId}`
         );
     }
+
+    // Reaction methods
+    async addReaction(messageId: string, emoji: string): Promise<void> {
+        await http.post(
+            `${API_ENDPOINTS.CHAT.MESSAGES_BASE}/${messageId}/reactions`,
+            { emoji }
+        );
+    }
+
+    async removeReaction(messageId: string, emoji: string): Promise<void> {
+        await http.delete(
+            `${API_ENDPOINTS.CHAT.MESSAGES_BASE}/${messageId}/reactions`,
+            { data: { emoji } }
+        );
+    }
+
+    async getMessageReactions(messageId: string): Promise<Message['reactions']> {
+        const { data } = await http.get(
+            `${API_ENDPOINTS.CHAT.MESSAGES_BASE}/${messageId}/reactions`
+        );
+        return data;
+    }
 }
 
 export const chatService = new ChatService();

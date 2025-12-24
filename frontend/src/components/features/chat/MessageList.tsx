@@ -8,6 +8,7 @@ import { MediaModal } from '../../common/MediaModal';
 import { ChatBackground } from './ChatBackground';
 import { useAuth } from '../../../hooks/useAuth';
 import { useMediaModal } from '../../../hooks/useMediaModal';
+import { useChatStore } from '../../../stores/chatStore';
 import type { Message, Conversation } from '../../../types/chat.types';
 import type { User } from '../../../types/user.types';
 
@@ -63,6 +64,7 @@ export const MessageList = memo(function MessageList({
     uploadingFiles = []
 }: MessageListProps) {
     const { user } = useAuth();
+    const toggleReaction = useChatStore((state) => state.toggleReaction);
     const bottomRef = useRef<HTMLDivElement>(null);
     const {
         isOpen,
@@ -90,6 +92,11 @@ export const MessageList = memo(function MessageList({
     // Handle media click
     const handleMediaClick = (message: Message) => {
         openModal(message, mediaMessages);
+    };
+
+    // Handle reaction click
+    const handleReaction = (messageId: string, emoji: string) => {
+        toggleReaction(messageId, emoji);
     };
 
     // Auto-scroll to bottom when new messages arrive
@@ -176,6 +183,7 @@ export const MessageList = memo(function MessageList({
                             sender={isOwn ? undefined : sender}
                             showAvatar={isLastInGroup}
                             onMediaClick={handleMediaClick}
+                            onReaction={handleReaction}
                         />
                     </div>
                 );

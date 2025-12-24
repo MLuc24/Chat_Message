@@ -2,6 +2,8 @@
 
 import { memo, useState, useRef } from 'react';
 import { Avatar } from '../../common/Avatar';
+import { MessageReactions } from './MessageReactions';
+import { MessageReactionPicker } from './MessageReactionPicker';
 import type { Message } from '../../../types/chat.types';
 import type { User } from '../../../types/user.types';
 
@@ -11,6 +13,7 @@ interface MessageItemProps {
     sender?: User;
     showAvatar?: boolean;
     onMediaClick?: (message: Message) => void;
+    onReaction?: (messageId: string, emoji: string) => void;
 }
 
 function formatMessageTime(date: Date | string): string {
@@ -164,10 +167,13 @@ export const MessageItem = memo(function MessageItem({
     isOwn,
     sender,
     showAvatar = true,
-    onMediaClick
+    onMediaClick,
+    onReaction
 }: MessageItemProps) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
+    const [isHovered, setIsHovered] = useState(false);
+    const [showReactionPicker, setShowReactionPicker] = useState(false);
     const audioRef = useRef<HTMLAudioElement>(null);
 
     const handleMediaClick = () => {
@@ -198,6 +204,17 @@ export const MessageItem = memo(function MessageItem({
         setCurrentTime(0);
     };
 
+    const handleReactionClick = (emoji: string) => {
+        if (onReaction) {
+            onReaction(message.id, emoji);
+        }
+        setShowReactionPicker(false);
+    };
+
+    const handleReactionButtonClick = () => {
+        setShowReactionPicker(!showReactionPicker);
+    };
+
     const formatAudioTime = (seconds: number): string => {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
@@ -218,7 +235,14 @@ export const MessageItem = memo(function MessageItem({
     const isEmojiMessage = message.type === 'text' && message.text && isOnlyEmoji(message.text);
 
     return (
-        <div className={`flex items-start ${isOwn ? 'justify-end' : 'justify-start'} mb-1 gap-2`}>
+        <div 
+            className={`flex items-start ${isOwn ? 'justify-end' : 'justify-start'} mb-1 gap-2 group`}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => {
+                setIsHovered(false);
+                setShowReactionPicker(false);
+            }}
+        >
             {/* Avatar for received messages - only show on last message in group */}
             {!isOwn && (
                 <div className="w-7 h-7 mt-2.5 flex-shrink-0">
@@ -233,7 +257,33 @@ export const MessageItem = memo(function MessageItem({
                 </div>
             )}
 
-            <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-[65%]`}>
+            <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-[65%] relative`}>
+                {/* Reaction button - appears on hover */}
+                {isHovered && !isEmojiMessage && (
+                    <div 
+                        className={`absolute -top-3 ${isOwn ? 'right-0' : 'left-0'} z-10`}
+                    >
+                        <button
+                            onClick={handleReactionButtonClick}
+                            className="flex items-center justify-center w-8 h-8 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 hover:scale-110 transition-transform"
+                            title="React to message"
+                        >
+                            <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </button>
+                        
+                        {/* Reaction Picker Popup */}
+                        {showReactionPicker && (
+                            <MessageReactionPicker
+                                onSelectEmoji={handleReactionClick}
+                                position="top"
+                                align={isOwn ? 'right' : 'left'}
+                            />
+                        )}
+                    </div>
+                )}
+
                 {/* Message bubble */}
                 <div
                     className={`rounded-2xl overflow-hidden transition-all duration-300 ${isEmojiMessage
@@ -573,6 +623,15 @@ export const MessageItem = memo(function MessageItem({
                         </div>
                     )}
                 </div>
+
+                {/* Message Reactions */}
+                {message.reactions && message.reactions.length > 0 && (
+                    <MessageReactions
+                        reactions={message.reactions}
+                        onReactionClick={handleReactionClick}
+                        isOwn={isOwn}
+                    />
+                )}
 
                 {/* Timestamp - only show on last message in group */}
                 {showAvatar && (

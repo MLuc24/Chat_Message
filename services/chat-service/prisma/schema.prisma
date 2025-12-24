@@ -66,6 +66,7 @@ model Message {
 
   conversation Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   statuses     MessageStatus[]
+  reactions    MessageReaction[]
 
   @@map("messages")
   @@index([conversationId])
@@ -120,4 +121,19 @@ model Nickname {
   @@index([conversationId])
   @@index([userId])
   @@index([targetUserId])
+}
+
+model MessageReaction {
+  id        String   @id @default(uuid())
+  messageId String   @map("message_id")
+  userId    String   @map("user_id")
+  emoji     String   @db.VarChar(10)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@map("message_reactions")
+  @@index([messageId])
+  @@index([userId])
 }

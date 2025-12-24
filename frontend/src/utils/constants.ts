@@ -25,6 +25,7 @@ export const API_ENDPOINTS = {
         MESSAGES: (conversationId: string) => `/chat/conversations/${conversationId}/messages`,
         SEND_MESSAGE: (conversationId: string) => `/chat/conversations/${conversationId}/messages`,
         DELETE_MESSAGE: (messageId: string) => `/chat/messages/${messageId}`,
+        MESSAGES_BASE: '/chat/messages',
     },
 } as const;
 
@@ -42,6 +43,7 @@ export const WS_EVENTS = {
     MESSAGE_NEW: 'message_new',
     MESSAGE_UPDATED: 'message_updated',
     MESSAGE_DELETED: 'message_deleted',
+    MESSAGE_REACTION: 'message_reaction',
     USER_TYPING: 'user_typing',
     USER_ONLINE: 'user_online',
     USER_OFFLINE: 'user_offline',

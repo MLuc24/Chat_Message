@@ -203,3 +203,7 @@ export class UpdateMessageDto {
   @IsString()
   text: string;
 }
+
+// Export reaction DTOs
+export * from './add-reaction.dto';
+export * from './message-reaction.dto';

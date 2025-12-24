@@ -2,6 +2,21 @@
 
 import type { User } from './user.types';
 
+// Reaction types
+export interface MessageReaction {
+    emoji: string;
+    userId: string;
+    user?: User;
+    createdAt: string;
+}
+
+export interface ReactionSummary {
+    emoji: string;
+    count: number;
+    users: string[]; // User IDs
+    hasReacted: boolean; // Whether current user has reacted with this emoji
+}
+
 export interface MediaItem {
     url: string;
     type: 'image' | 'video';
@@ -46,6 +61,7 @@ export interface Message {
     
     isEdited?: boolean;
     isDeleted?: boolean;
+    reactions?: MessageReaction[];
     createdAt: string;
     updatedAt: string;
 }
@@ -139,4 +155,14 @@ export interface GroupUpdatedEvent {
     avatarUrl?: string;
     themeId?: string;
     updatedBy: string;
+}
+
+// Reaction event payloads
+export interface MessageReactionEvent {
+    messageId: string;
+    conversationId: string;
+    emoji: string;
+    userId: string;
+    action: 'add' | 'remove';
+    createdAt: string;
 }

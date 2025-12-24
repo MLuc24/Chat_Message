@@ -9,6 +9,15 @@ type GroupEventHandler = (event: {
   data: any;
   memberIds: string[];
 }) => void;
+type ReactionEventHandler = (event: {
+  messageId: string;
+  conversationId: string;
+  emoji: string;
+  userId: string;
+  action: 'add' | 'remove';
+  createdAt: string;
+  memberIds: string[];
+}) => void;
 
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
@@ -17,6 +26,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private subscriber: Redis;
   private messageHandler: MessageHandler | null = null;
   private groupEventHandler: GroupEventHandler | null = null;
+  private reactionEventHandler: ReactionEventHandler | null = null;
 
   async onModuleInit() {
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
@@ -51,6 +61,19 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
             type: data.type,
             conversationId,
             data: data.data,
+            memberIds: data.memberIds || [],
+          });
+        }
+
+        // Handle reaction events
+        if (data.type === 'message_reaction' && this.reactionEventHandler) {
+          this.reactionEventHandler({
+            messageId: data.data.messageId,
+            conversationId: data.data.conversationId,
+            emoji: data.data.emoji,
+            userId: data.data.userId,
+            action: data.data.action,
+            createdAt: data.data.createdAt,
             memberIds: data.memberIds || [],
           });
         }
@@ -110,5 +133,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   setGroupEventHandler(handler: GroupEventHandler): void {
     this.groupEventHandler = handler;
+  }
+
+  setReactionEventHandler(handler: ReactionEventHandler): void {
+    this.reactionEventHandler = handler;
   }
 }

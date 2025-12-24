@@ -20,7 +20,6 @@ function App() {
   // Listen for auth:logout event from http interceptor
   useEffect(() => {
     const handleAuthLogout = () => {
-      console.log('[App] Received auth:logout event, logging out...');
       logout();
     };
 

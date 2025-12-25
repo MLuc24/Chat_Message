@@ -521,16 +521,12 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
     memberIds: string[];
   }) {
     const { memberIds, ...eventData } = reactionEvent;
-    console.log(`😊 Broadcasting reaction event to ${memberIds.length} participants in conversation ${reactionEvent.conversationId}`);
     
     for (const userId of memberIds) {
       const socketId = await this.redis.getSocketId(userId);
       
       if (socketId) {
         this.server.to(socketId).emit('message_reaction', eventData);
-        console.log(`✅ Sent reaction event to user ${userId} (socket: ${socketId})`);
-      } else {
-        console.log(`⚠️ User ${userId} is offline, will see changes on reconnect`);
       }
     }
   }

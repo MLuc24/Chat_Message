@@ -372,8 +372,6 @@ export class MessageService {
     userId: string,
     dto: AddReactionDto,
   ): Promise<MessageReactionDto> {
-    this.logger.log(`Adding reaction: user=${userId}, message=${messageId}, emoji=${dto.emoji}`);
-
     // Get message and check if it exists
     const message = await this.prisma.message.findUnique({
       where: { id: messageId },
@@ -403,7 +401,6 @@ export class MessageService {
     });
 
     if (existingReaction) {
-      this.logger.debug(`Reaction already exists, returning existing`);
       return new MessageReactionDto(existingReaction);
     }
 
@@ -415,8 +412,6 @@ export class MessageService {
         emoji: dto.emoji,
       },
     });
-
-    this.logger.log(`Reaction added: ${reaction.id}`);
 
     // Get conversation members for broadcasting
     const members = await this.prisma.conversationMember.findMany({
@@ -452,8 +447,6 @@ export class MessageService {
     userId: string,
     emoji: string,
   ): Promise<void> {
-    this.logger.log(`Removing reaction: user=${userId}, message=${messageId}, emoji=${emoji}`);
-
     // Get message and check if it exists
     const message = await this.prisma.message.findUnique({
       where: { id: messageId },
@@ -475,8 +468,6 @@ export class MessageService {
         emoji,
       },
     });
-
-    this.logger.log(`Reaction removed`);
 
     // Get conversation members for broadcasting
     const members = await this.prisma.conversationMember.findMany({
